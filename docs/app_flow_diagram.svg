@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <defs>
+    <style>
+      .title { font: bold 22px Arial, sans-serif; fill: #1A1C1E; }
+      .label { font: 13px Arial, sans-serif; fill: #1A1C1E; }
+      .small { font: 11px Arial, sans-serif; fill: #6B7280; }
+      .box { fill: #FFFFFF; stroke: #5B5BD6; stroke-width: 2; rx: 12; }
+      .box-alt { fill: #EDEAFf; stroke: #4241BC; stroke-width: 2; rx: 12; }
+      .box-finance { fill: #F0FDFA; stroke: #14B8A6; stroke-width: 2; rx: 12; }
+      .box-calendar { fill: #FAF5FF; stroke: #6718D8; stroke-width: 2; rx: 12; }
+      .arrow { stroke: #777585; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#777585"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="40" text-anchor="middle" class="title">S¡ Ó luÓng éng dång SÕ Sinh Viên (Demo)</text>
+  <text x="600" y="65" text-anchor="middle" class="small">Qu£n lý chi tiêu &amp; thÝi gian  mock data visualization</text>
+
+  <!-- Splash -->
+  <rect x="500" y="90" width="200" height="50" class="box"/>
+  <text x="600" y="120" text-anchor="middle" class="label">SplashActivity</text>
+
+  <!-- Auth branch -->
+  <rect x="120" y="200" width="180" height="50" class="box"/>
+  <text x="210" y="230" text-anchor="middle" class="label">AuthActivity</text>
+  <text x="210" y="268" text-anchor="middle" class="small">ng nh­p / ng ký</text>
+
+  <rect x="120" y="300" width="180" height="50" class="box-alt"/>
+  <text x="210" y="330" text-anchor="middle" class="label">OnboardingActivity</text>
+  <text x="210" y="368" text-anchor="middle" class="small">3 b°Ûc c¥u hình</text>
+
+  <!-- Main -->
+  <rect x="480" y="200" width="240" height="60" class="box"/>
+  <text x="600" y="228" text-anchor="middle" class="label">MainActivity</text>
+  <text x="600" y="248" text-anchor="middle" class="small">Bottom Nav 5 tab + FAB</text>
+
+  <!-- Tabs -->
+  <rect x="40" y="420" width="140" height="44" class="box"/>
+  <text x="110" y="448" text-anchor="middle" class="label">Trang chç</text>
+
+  <rect x="200" y="420" width="140" height="44" class="box-finance"/>
+  <text x="270" y="448" text-anchor="middle" class="label">Chi tiêu</text>
+
+  <rect x="360" y="420" width="140" height="44" class="box-calendar"/>
+  <text x="430" y="448" text-anchor="middle" class="label">LËch</text>
+
+  <rect x="520" y="420" width="140" height="44" class="box-alt"/>
+  <text x="590" y="448" text-anchor="middle" class="label">Trã lý</text>
+
+  <rect x="680" y="420" width="140" height="44" class="box"/>
+  <text x="750" y="448" text-anchor="middle" class="label">Cài ·t</text>
+
+  <!-- Finance sub-screens -->
+  <rect x="40" y="540" width="160" height="44" class="box-finance"/>
+  <text x="120" y="568" text-anchor="middle" class="label">Danh sách GD</text>
+
+  <rect x="220" y="540" width="160" height="44" class="box-finance"/>
+  <text x="300" y="568" text-anchor="middle" class="label">Thêm/Sía GD</text>
+
+  <rect x="400" y="540" width="160" height="44" class="box-finance"/>
+  <text x="480" y="568" text-anchor="middle" class="label">Ngân sách</text>
+
+  <rect x="580" y="540" width="160" height="44" class="box-finance"/>
+  <text x="660" y="568" text-anchor="middle" class="label">ThÑng kê</text>
+
+  <rect x="760" y="540" width="160" height="44" class="box-finance"/>
+  <text x="840" y="568" text-anchor="middle" class="label">Danh måc</text>
+
+  <rect x="940" y="540" width="160" height="44" class="box-finance"/>
+  <text x="1020" y="568" text-anchor="middle" class="label">OCR xác nh­n</text>
+
+  <!-- Calendar sub -->
+  <rect x="360" y="640" width="180" height="44" class="box-calendar"/>
+  <text x="450" y="668" text-anchor="middle" class="label">LËch Ngày/Tu§n/Tháng</text>
+
+  <rect x="560" y="640" width="180" height="44" class="box-calendar"/>
+  <text x="650" y="668" text-anchor="middle" class="label">Á xu¥t lËch AI</text>
+
+  <!-- FAB -->
+  <rect x="480" y="740" width="240" height="50" class="box-alt"/>
+  <text x="600" y="770" text-anchor="middle" class="label">FAB (+)  Thêm nhanh</text>
+  <text x="600" y="800" text-anchor="middle" class="small">Ghi chi / Ghi thu / Chåp hóa ¡n</text>
+
+  <!-- Logout -->
+  <rect x="680" y="500" width="140" height="44" class="box"/>
+  <text x="750" y="528" text-anchor="middle" class="label">ng xu¥t</text>
+
+  <!-- Arrows -->
+  <line x1="600" y1="140" x2="600" y2="200" class="arrow"/>
+  <line x1="550" y1="115" x2="210" y2="200" class="arrow"/>
+  <text x="360" y="175" class="small">Ch°a ng nh­p</text>
+
+  <line x1="210" y1="250" x2="210" y2="300" class="arrow"/>
+  <line x1="300" y1="325" x2="480" y2="230" class="arrow"/>
+  <text x="380" y="310" class="small">Hoàn t¥t onboarding</text>
+
+  <line x1="600" y1="260" x2="600" y2="380" class="arrow"/>
+  <text x="610" y="320" class="small">ã onboard</text>
+
+  <line x1="520" y1="240" x2="110" y2="420" class="arrow"/>
+  <line x1="540" y1="250" x2="270" y2="420" class="arrow"/>
+  <line x1="580" y1="250" x2="430" y2="420" class="arrow"/>
+  <line x1="620" y1="250" x2="590" y2="420" class="arrow"/>
+  <line x1="660" y1="250" x2="750" y2="420" class="arrow"/>
+
+  <line x1="270" y1="464" x2="300" y2="540" class="arrow"/>
+  <line x1="270" y1="464" x2="480" y2="540" class="arrow"/>
+  <line x1="270" y1="464" x2="660" y2="540" class="arrow"/>
+  <line x1="430" y1="464" x2="450" y2="640" class="arrow"/>
+  <line x1="430" y1="464" x2="650" y2="640" class="arrow"/>
+  <line x1="750" y1="464" x2="750" y2="500" class="arrow"/>
+  <line x1="750" y1="544" x2="210" y2="250" class="arrow"/>
+  <text x="820" y="490" class="small">’ AuthActivity</text>
+
+  <line x1="600" y1="260" x2="600" y2="740" class="arrow"/>
+
+  <!-- Legend -->
+  <rect x="40" y="830" width="16" height="16" fill="#5B5BD6"/>
+  <text x="64" y="843" class="small">LuÓng chính</text>
+  <rect x="160" y="830" width="16" height="16" fill="#14B8A6"/>
+  <text x="184" y="843" class="small">Chi tiêu / Tài chính</text>
+  <rect x="320" y="830" width="16" height="16" fill="#6718D8"/>
+  <text x="344" y="843" class="small">LËch / ThÝi gian</text>
+  <rect x="480" y="830" width="16" height="16" fill="#EDEAFf" stroke="#4241BC"/>
+  <text x="504" y="843" class="small">Auth / Onboarding / Trã lý</text>
+</svg>

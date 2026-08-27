@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/statistics"
+        style="@style/TextAppearance.SoSinhVien.Headline" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        style="@style/Widget.SoSinhVien.Card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chi theo danh mục (Tháng 10)"
+                style="@style/TextAppearance.SoSinhVien.Title" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Ăn uống — 45% (1.012.500 đ)" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Di chuyển — 25% (562.500 đ)" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Học tập — 15% (337.500 đ)" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Giải trí — 10% (225.000 đ)" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Khác — 5% (112.500 đ)" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        style="@style/Widget.SoSinhVien.Card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mua nhiều nhất"
+                style="@style/TextAppearance.SoSinhVien.Title" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="1. Cơm trưa — 12 lần" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2. Grab — 8 lần" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3. Cà phê — 6 lần" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>
