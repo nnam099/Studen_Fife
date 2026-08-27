@@ -1,4 +1,4 @@
-# Sổ Sinh Viên — Student Life 
+# Studen_Fife — Sổ Sinh Viên (Student Life)
 
 Ứng dụng demo **Quản lý chi tiêu & thời gian cho sinh viên**, mở bằng Android Studio. Dữ liệu mock để visualize giao diện và luồng nghiệp vụ.
 
@@ -11,7 +11,7 @@
 ## Mở project
 
 1. Android Studio → **File → Open**
-2. Chọn thư mục `d:\nam4\aicourse\src`
+2. Chọn thư mục gốc repo (clone về máy)
 3. Đợi Gradle sync (lần đầu có thể mất vài phút)
 
 ## Chạy app
@@ -45,7 +45,7 @@ Xem file: [`docs/app_flow_diagram.svg`](docs/app_flow_diagram.svg)
 
 ## Nguồn thiết kế
 
-- Nghiệp vụ: `Tai_lieu_nghiep_vu_QuanLySinhVien.docx` (thư mục cha `aicourse`)
+- Nghiệp vụ: `Tai_lieu_nghiep_vu_QuanLySinhVien.docx`
 - UX/UI prompt: `Stitch_Prompt_UX_UI.md`
 - Chi tiết giao diện: thư mục `ui/`
 
