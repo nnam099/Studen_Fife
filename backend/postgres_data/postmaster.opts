@@ -1,0 +1,1 @@
+/usr/lib/postgresql/17/bin/postgres "-D" "/home/nnam09/PTIT/Kada/Studen_Fife/backend/postgres_data" "-c" "unix_socket_directories=/home/nnam09/PTIT/Kada/Studen_Fife/backend/postgres_data"

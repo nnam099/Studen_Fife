@@ -1,0 +1,671 @@
+TÀI LIỆU XÁC ĐỊNH YÊU CẦU NGHIỆP VỤ
+Ứng dụng Android Quản lý Chi tiêu & Tối ưu Thời gian cho Sinh viên
+Mục tiêu tài liệu: xác định nghiệp vụ đủ rõ để thiết kế giao diện, phát triển và kiểm thử MVP Android. Toàn bộ mã nghiệp vụ (SV_QD), biểu mẫu (SV_BM), quy tắc tính toán (TT), nhắc nhở (NT), phần việc AI (AI) và ca đặc biệt (DB) là nguồn tham chiếu thống nhất cho việc sinh mã.
+
+1. Tổng quan hệ thống
+Hệ thống là ứng dụng di động Android dành cho sinh viên, giải quyết hai bài toán cốt lõi là quản lý chi tiêu và quản lý thời gian, có tích hợp trí tuệ nhân tạo để hỗ trợ nhập liệu, phân loại, phân tích và đề xuất. Phiên bản hiện tại không triển khai giao diện web.
+Kiến trúc triển khai. Hệ thống có tài khoản người dùng và thành phần phía server. Dữ liệu nghiệp vụ được lưu cục bộ trên thiết bị để bảo đảm thao tác nhanh và dùng được khi mất mạng, đồng thời đồng bộ lên server để phục hồi và dùng trên nhiều thiết bị. Mọi lời gọi tới dịch vụ AI đều đi qua server; ứng dụng Android không chứa khóa API của nhà cung cấp AI.
+Đối tượng sử dụng. Sinh viên bị giới hạn chi tiêu trong tháng, nhận trợ cấp cố định hoặc có thu nhập làm thêm hạn chế, cần kiểm soát dòng tiền và ngân sách. Sinh viên chưa tối ưu được thời gian, gặp khó khăn khi sắp xếp lịch học, lịch thi, công việc, thời hạn hoàn thành và thời gian rảnh.
+Ranh giới trách nhiệm. Ngân sách, dòng tiền, khoảng thời gian khả dụng, ràng buộc thời gian và xung đột lịch được tính và kiểm tra bằng logic xác định của hệ thống. AI thực hiện trích xuất, phân loại, xếp hạng, diễn giải và đề xuất. Mọi thao tác làm phát sinh, thay đổi hoặc xóa dữ liệu nghiệp vụ đều phải do người dùng xác nhận, kể cả khi thao tác được khởi tạo bởi trợ lý hội thoại.
+
+2. Phân tích vấn đề và mục tiêu
+Ghi chú bắt buộc về nguồn số liệu. Các tỷ lệ phần trăm dưới đây cần được dẫn nguồn: hoặc trích khảo sát/tài liệu đã công bố, hoặc ghi rõ là khảo sát của nhóm kèm phạm vi, thời gian và số lượng mẫu. Riêng con số “20% sinh viên không thống kê được sản phẩm đã mua” không nhất quán với “90% không quản lý được dòng tiền” — nếu 90% không kiểm soát được dòng tiền thì tỷ lệ không thống kê được chi tiết mua sắm khó có thể chỉ là 20%. Cần kiểm tra lại số liệu gốc hoặc diễn đạt lại phạm vi câu hỏi khảo sát.
+2.1. Vấn đề 1 — Quản lý chi tiêu
+Sinh viên không kiểm soát được dòng tiền, dẫn đến lo lắng về tài chính và nhu cầu tìm giải pháp hỗ trợ. Tình trạng chi tiêu vượt khả năng diễn ra phổ biến do không có hạn mức và cảnh báo rõ ràng. Sinh viên không thống kê được các sản phẩm đã mua nên không biết tiền đã đi đâu và thiếu dữ liệu để điều chỉnh thói quen.
+Vấn đề phụ — rào cản nhập liệu. Nguyên nhân trực tiếp làm người dùng bỏ giữa các ứng dụng quản lý chi tiêu là chi phí nhập liệu thủ công. Đây là căn cứ nghiệp vụ cho chức năng nhập chi tiêu từ ảnh hóa đơn và nhập qua hội thoại.
+2.2. Vấn đề 2 — Quản lý thời gian
+Sinh viên không biết cách sắp xếp lịch học, lịch thi, thời hạn bài tập và công việc làm thêm. Thời gian rảnh bị lãng phí do không có kế hoạch cụ thể. Người dùng cũng quên thời hạn và quên các sự kiện đã đặt, nên hệ thống cần chủ động nhắc.
+
+3. Giải pháp đề xuất
+Quản lý chi tiêu. Cho phép nhập nhanh giao dịch thu và chi, thiết lập ngân sách theo tháng, phân bổ ngân sách theo danh mục và theo dõi mức sử dụng. Mỗi khoản chi ghi nhận tên sản phẩm hoặc dịch vụ và danh mục để phục vụ thống kê. Hệ thống cảnh báo khi mức sử dụng ngân sách đạt 80% và khi đạt hoặc vượt 100%.
+Nhập chi tiêu từ ảnh hóa đơn. Người dùng chụp hoặc chọn ảnh hóa đơn. Hệ thống nhận dạng văn bản trên thiết bị và trích ba thông tin: tổng tiền, tên cửa hàng và ngày giao dịch. Kết quả được dùng để điền trước biểu mẫu ghi khoản chi. Người dùng luôn phải kiểm tra và xác nhận trước khi lưu. Hệ thống không tách từng dòng sản phẩm thành nhiều giao dịch trong phiên bản này.
+Quản lý thời gian. Hệ thống tách rõ Sự kiện và Công việc. Sự kiện có thời gian cố định. Công việc có thời hạn hoàn thành, mức ưu tiên và thời lượng ước tính. Hệ thống xác định các khoảng thời gian khả dụng dựa trên lịch hiện có, thời gian ngủ, khung giờ người dùng đánh dấu không khả dụng và thời gian đệm giữa các hoạt động, sau đó dùng AI để xếp hạng và đề xuất cách sử dụng. AI không tự thay đổi lịch.
+Nhắc nhở chủ động. Hệ thống nhắc bốn nhóm việc: ngưỡng ngân sách, thời hạn công việc, sự kiện sắp diễn ra và nhắc duy trì thói quen ghi chép hoặc tạo ngân sách đầu tháng. Người dùng bật/tắt và cấu hình thời điểm nhắc cho từng nhóm.
+Trợ lý hội thoại. Người dùng trao đổi bằng ngôn ngữ tự nhiên để tra cứu số liệu, hỏi về lịch và yêu cầu thao tác nghiệp vụ. Trợ lý được phép tự thực hiện liên tiếp nhiều bước đọc dữ liệu mà không cần hỏi. Mọi bước ghi dữ liệu đều dừng lại để người dùng xác nhận trước khi thực thi. Số liệu tài chính trong câu trả lời phải lấy từ kết quả tính toán của hệ thống, trợ lý không được tự tính.
+Trí tuệ nhân tạo. AI đề xuất danh mục cho khoản chi, trích thông tin từ ảnh hóa đơn, tạo nhận định về tình hình tài chính, lập kế hoạch thực hiện công việc và vận hành trợ lý hội thoại. AI chỉ đưa ra đề xuất và diễn giải.
+
+4. Bảng xác định yêu cầu nghiệp vụ
+Ghi chú về cách trình bày. Mỗi quy định chỉ được phát biểu ở một nơi duy nhất trong bảng dưới đây; các mục khác tham chiếu tới nó bằng mã. Mã nghiệp vụ là định danh ổn định, không nhất thiết đọc theo thứ tự liên tục.
+4.1. Nhóm tài chính
+Mã
+Nghiệp vụ
+Loại
+Quy định và ràng buộc
+Biểu mẫu
+SV_QD_01
+Tạo ngân sách tháng
+Lưu trữ
+Nhập tháng áp dụng, tổng ngân sách và số dư đầu kỳ. Tháng hợp lệ; tổng ngân sách > 0; số dư đầu kỳ ≥ 0. Mỗi người dùng chỉ có một ngân sách cho một tháng
+SV_BM_01
+SV_QD_02
+Phân bổ ngân sách theo danh mục
+Lưu trữ
+Mỗi danh mục có tối đa một mức phân bổ trong cùng tháng. Số tiền ≥ 0. Tổng phân bổ ≤ tổng ngân sách. Được phép để lại phần chưa phân bổ
+SV_BM_02
+SV_QD_03
+Sửa ngân sách tháng
+Cập nhật
+Tổng ngân sách mới > 0. Nếu tổng phân bổ hiện tại lớn hơn ngân sách mới, hệ thống chặn lưu và yêu cầu người dùng điều chỉnh phân bổ trước; hệ thống không tự động giảm phân bổ. Nếu ngân sách mới nhỏ hơn số đã chi thì vẫn cho lưu và chuyển trạng thái Vượt ngân sách
+SV_BM_03
+SV_QD_04
+Xem ngân sách tháng
+Tra cứu
+Hiển thị tổng ngân sách, đã chi, còn lại, tỷ lệ sử dụng và số tiền khả dụng của tháng được chọn. Nếu chưa có ngân sách thì hiển thị Chưa thiết lập
+—
+SV_QD_05
+Ghi nhận khoản thu
+Lưu trữ
+Số tiền > 0; nguồn thu và ngày giờ bắt buộc. Khoản thu tính vào tổng thu và số tiền khả dụng, không tự động làm tăng ngân sách đã thiết lập
+SV_BM_04
+SV_QD_06
+Ghi nhận khoản chi
+Lưu trữ
+Số tiền > 0; tên sản phẩm/dịch vụ, danh mục và ngày giờ bắt buộc. Nếu tháng chưa có ngân sách thì vẫn lưu giao dịch và chưa tính tỷ lệ sử dụng
+SV_BM_05
+SV_QD_07
+Sửa giao dịch
+Cập nhật
+Chỉ sửa giao dịch của người dùng hiện tại. Khi sửa số tiền, loại, ngày hoặc danh mục, hệ thống tính lại toàn bộ chỉ số bị ảnh hưởng, kể cả khi giao dịch chuyển sang tháng khác
+SV_BM_06
+SV_QD_08
+Xóa giao dịch
+Xóa
+Yêu cầu xác nhận. Xóa mềm: giao dịch không tham gia phép tính nhưng dữ liệu được giữ ở trạng thái Đã xóa
+SV_BM_11
+SV_QD_09
+Xem danh sách giao dịch
+Tra cứu
+Sắp xếp mới nhất trước. Lọc theo loại, danh mục và khoảng thời gian. Chỉ hiển thị giao dịch đang hoạt động
+—
+SV_QD_10
+Tìm kiếm giao dịch
+Tra cứu
+Tìm theo tên sản phẩm/dịch vụ, không phân biệt hoa thường và không phân biệt dấu. Không có kết quả thì thông báo rõ
+—
+SV_QD_11
+Xem thống kê chi tiêu
+Kết xuất
+Chỉ tính giao dịch Chi đang hoạt động trong khoảng thời gian chọn. Tỷ lệ danh mục = chi danh mục / tổng chi × 100%
+—
+SV_QD_12
+Xem thống kê sản phẩm/dịch vụ
+Kết xuất
+Danh sách mua nhiều xếp theo số lần, danh sách tốn nhiều xếp theo tổng tiền, tính độc lập. Khi nhóm theo tên phải áp dụng quy tắc chuẩn hóa tên ở mục 8
+—
+SV_QD_13
+Cảnh báo đạt 80% ngân sách
+Thông báo
+Khi tỷ lệ sử dụng từ 80% đến dưới 100%, gửi thông báo một lần. Hệ thống lưu cờ đã gửi cho ngưỡng 80% và đặt lại cờ khi tỷ lệ tụt xuống dưới 80% do sửa hoặc xóa giao dịch
+—
+SV_QD_14
+Cảnh báo đạt 100% ngân sách
+Thông báo
+Khi tỷ lệ sử dụng ≥ 100%, gửi thông báo một lần. Cờ đã gửi cho ngưỡng 100% được đặt lại khi tỷ lệ tụt xuống dưới 100%
+—
+SV_QD_35
+Xem mức sử dụng theo danh mục
+Tra cứu
+Với mỗi danh mục đã phân bổ, hiển thị mức phân bổ, đã chi, còn lại và tỷ lệ sử dụng. Danh mục chưa phân bổ chỉ hiển thị số đã chi. MVP không phát thông báo theo danh mục
+—
+SV_QD_37
+Quản lý danh mục chi tiêu
+Cập nhật
+Hệ thống cấp sẵn tập danh mục mặc định. Người dùng thêm, đổi tên và ẩn danh mục riêng. Không cho phép trùng tên sau chuẩn hóa. Danh mục đã phát sinh giao dịch chỉ được ẩn, không được xóa vật lý; giao dịch cũ giữ nguyên danh mục
+SV_BM_15
+SV_QD_42
+Nhập khoản chi từ ảnh hóa đơn
+Lưu trữ
+Người dùng chụp hoặc chọn ảnh. Hệ thống nhận dạng văn bản trên thiết bị và trích tổng tiền, tên cửa hàng, ngày giao dịch, mỗi trường kèm mức tin cậy. Kết quả điền trước biểu mẫu SV_BM_05; trường có tin cậy thấp phải được đánh dấu để người dùng kiểm tra. Không lưu giao dịch nếu người dùng chưa xác nhận. Ảnh gốc không bắt buộc phải lưu
+SV_BM_16
+4.2. Nhóm thời gian
+Mã
+Nghiệp vụ
+Loại
+Quy định và ràng buộc
+Biểu mẫu
+SV_QD_15
+Tạo sự kiện
+Lưu trữ
+Tên, thời gian bắt đầu, thời gian kết thúc và loại là bắt buộc; kết thúc > bắt đầu. Nếu lặp hàng tuần, ngày trong tuần lấy từ ngày bắt đầu và phải có ngày kết thúc chuỗi
+SV_BM_07
+SV_QD_16
+Xem sự kiện
+Tra cứu
+Xem theo ngày, tuần hoặc tháng. Không hiển thị sự kiện đã xóa. Chỉ dữ liệu của người dùng hiện tại
+—
+SV_QD_17
+Sửa sự kiện
+Cập nhật
+Sự kiện lặp phải chọn phạm vi sửa: một lần xảy ra hoặc toàn bộ chuỗi. Sửa một lần xảy ra được lưu thành bản ghi ngoại lệ của chuỗi, không phá vỡ quy luật lặp. Nếu thời gian mới xung đột thì cảnh báo và cho phép ghi đè sau khi xác nhận
+SV_BM_08
+SV_QD_18
+Xóa sự kiện
+Xóa
+Sự kiện lặp phải chọn xóa một lần xảy ra hoặc toàn bộ chuỗi. Luôn yêu cầu xác nhận
+SV_BM_12
+SV_QD_19
+Kiểm tra xung đột lịch
+Kiểm tra
+Hai sự kiện xung đột khi khoảng thời gian chồng lấn. Xung đột là cảnh báo có thể ghi đè sau xác nhận, áp dụng thống nhất cho cả tạo thủ công và chấp nhận đề xuất AI. Hệ thống không tự thay đổi hay xóa sự kiện hiện có
+—
+SV_QD_20
+Tạo công việc
+Lưu trữ
+Tên, thời hạn, mức ưu tiên và thời lượng ước tính > 0 là bắt buộc. Thời hạn gồm ngày và giờ; nếu chỉ nhập ngày thì mặc định 23:59. Trạng thái ban đầu là Chưa thực hiện
+SV_BM_09
+SV_QD_21
+Xem danh sách công việc
+Tra cứu
+Lọc theo trạng thái, mức ưu tiên và thời hạn. Công việc chưa hoàn thành mà đã qua thời hạn phải được đánh dấu quá hạn
+—
+SV_QD_22
+Sửa công việc
+Cập nhật
+Cho phép sửa tên, thời hạn, mức ưu tiên và thời lượng. Hệ thống không tự thay đổi các sự kiện đã tạo trước đó
+SV_BM_10
+SV_QD_23
+Cập nhật trạng thái công việc
+Cập nhật
+Bước chuyển hợp lệ: Chưa thực hiện → Đang thực hiện, Chưa thực hiện → Đã hoàn thành, Đang thực hiện → Đã hoàn thành, Đã hoàn thành → Đang thực hiện (mở lại). Khi hoàn thành thì lưu thời điểm hoàn thành. Quá hạn không là trạng thái, xem mục 6
+—
+SV_QD_24
+Xóa công việc
+Xóa
+Yêu cầu xác nhận. Công việc đã xóa không được dùng cho đề xuất mới. Các sự kiện liên quan không tự động bị xóa; hệ thống thông báo số sự kiện còn lại để người dùng tự xử lý
+SV_BM_13
+SV_QD_25
+Xác định khoảng thời gian khả dụng
+Phân tích
+Khoảng khả dụng là khoảng không chồng lấn sự kiện (đã cộng thời gian đệm), không nằm trong thời gian ngủ và không nằm trong khung giờ không khả dụng. Độ dài tối thiểu để một khoảng được coi là dùng được là 30 phút. Ngưỡng 90 phút chỉ dùng để xếp hạng ưu tiên cho công việc cần tập trung, không phải điều kiện loại bỏ. Cả hai giá trị cấu hình được
+—
+SV_QD_36
+Cập nhật trạng thái phiên thực hiện
+Cập nhật
+Mỗi sự kiện có liên kết Task là một phiên thực hiện, có trạng thái Đã lên lịch, Đã hoàn thành hoặc Đã bỏ. Người dùng đánh dấu trạng thái phiên. Chỉ phiên Đã hoàn thành được trừ vào thời lượng còn lại của Task
+SV_BM_17
+SV_QD_34
+Cấu hình sở thích và thời gian cá nhân
+Cập nhật
+Người dùng thiết lập khung giờ ưu tiên, khung giờ không khả dụng, thời gian ngủ, thời gian đệm, độ dài khoảng tối thiểu và sở thích hoạt động. Khung giờ không khả dụng và thời gian ngủ là ràng buộc chặn. Khung giờ ưu tiên là tín hiệu xếp hạng. Thay đổi cấu hình chỉ ảnh hưởng đề xuất mới
+SV_BM_14
+4.3. Nhóm đề xuất và trợ lý AI
+Mã
+Nghiệp vụ
+Loại
+Quy định và ràng buộc
+Biểu mẫu
+SV_QD_26
+Nhận đề xuất sử dụng thời gian
+Tra cứu
+Kích hoạt khi người dùng chủ động yêu cầu. Hệ thống tạo danh sách khoảng khả dụng trước, sau đó AI xếp hạng công việc chưa hoàn thành theo thời hạn, mức ưu tiên, thời lượng còn lại và sở thích. Không có phương án thì trả về Không khả thi
+—
+SV_QD_27
+Xem chi tiết đề xuất
+Tra cứu
+Hiển thị thời gian, thời lượng, công việc hoặc hoạt động liên quan, lý do đề xuất và trạng thái khả thi tại thời điểm xem
+—
+SV_QD_28
+Chấp nhận đề xuất
+Cập nhật
+Hệ thống kiểm tra ràng buộc và xung đột lần cuối ngay trước khi tạo. Vi phạm thời gian ngủ hoặc khung giờ không khả dụng thì chặn. Chỉ chồng lấn sự kiện thì cảnh báo và cho ghi đè sau xác nhận. Khi tạo, nếu đề xuất xuất phát từ Task thì lưu Task ID và tạo phiên ở trạng thái Đã lên lịch
+—
+SV_QD_29
+Từ chối đề xuất
+Cập nhật
+Không tạo, sửa hoặc xóa dữ liệu lịch. Chỉ bỏ qua đề xuất hiện tại. Có thể lưu tín hiệu từ chối để cá nhân hóa ở phiên bản sau
+—
+SV_QD_30
+Đề xuất danh mục cho khoản chi
+Phân tích
+Đầu vào là tên sản phẩm/dịch vụ và tập danh mục hiện có. Đầu ra là danh mục đề xuất kèm mức tin cậy. Tin cậy thấp thì yêu cầu người dùng xác nhận. Không ghi đè danh mục người dùng đã chọn
+—
+SV_QD_31
+Tạo nhận định tài chính
+Phân tích
+Chỉ dùng các chỉ số đã được hệ thống tính. AI diễn giải và khuyến nghị, không tự tính lại và không sửa dữ liệu nguồn
+—
+SV_QD_32
+Lập kế hoạch công việc
+Phân tích
+Đề xuất một hoặc nhiều phiên. Ưu tiên thời hạn trước, sau đó xét mức ưu tiên, thời lượng còn lại và sở thích. Được chia Task thành nhiều phiên nếu tổng thời gian khả dụng trước thời hạn đủ
+—
+SV_QD_33
+Xem báo cáo định kỳ
+Kết xuất
+Chỉ dùng dữ liệu trong kỳ được chọn. Dữ liệu chưa đủ thì phải nêu rõ. Thuộc nhóm nâng cao, không bắt buộc trong MVP
+—
+SV_QD_47
+Hỏi đáp với trợ lý
+Tra cứu
+Người dùng đặt câu hỏi bằng ngôn ngữ tự nhiên về chi tiêu, ngân sách, công việc và lịch. Trợ lý được tự thực hiện liên tiếp nhiều bước đọc dữ liệu để trả lời, không cần hỏi lại từng bước. Mọi số liệu phải lấy từ kết quả tính của hệ thống. Câu trả lời phải nêu rõ khoảng thời gian và phạm vi dữ liệu đã dùng. Nếu không đủ dữ liệu thì nói rõ, không được suy đoán số
+SV_BM_18
+SV_QD_48
+Trợ lý thực hiện thao tác ghi
+Cập nhật
+Trợ lý được đề nghị tạo hoặc sửa giao dịch, công việc và sự kiện. Trước khi thực thi, hệ thống hiển thị bản xem trước đầy đủ các trường sẽ ghi và chờ người dùng xác nhận. Một lần xác nhận chỉ áp dụng cho một thao tác đã hiển thị; không có xác nhận gộp cho nhiều thao tác. Trợ lý không được xóa dữ liệu, không được thay đổi cấu hình tài khoản và không được thực hiện thao tác ghi khi thiếu trường bắt buộc. Thao tác ghi vẫn phải đi qua đúng các quy định nghiệp vụ tương ứng
+SV_BM_19
+4.4. Nhóm tài khoản và nhắc nhở
+Mã
+Nghiệp vụ
+Loại
+Quy định và ràng buộc
+Biểu mẫu
+SV_QD_38
+Đăng ký tài khoản
+Lưu trữ
+Email hợp lệ và duy nhất; mật khẩu tối thiểu 8 ký tự gồm chữ và số. Mật khẩu không được lưu ở dạng đọc được. Sau khi đăng ký, hệ thống tạo tập danh mục mặc định và cấu hình cá nhân mặc định cho người dùng
+SV_BM_20
+SV_QD_39
+Đăng nhập
+Kiểm tra
+Sai thông tin thì thông báo chung, không tiết lộ email có tồn tại hay không. Sau 5 lần sai liên tiếp thì tạm khóa 5 phút. Phiên đăng nhập được duy trì đến khi người dùng đăng xuất
+SV_BM_21
+SV_QD_40
+Đăng xuất
+Cập nhật
+Yêu cầu xác nhận. Sau khi đăng xuất, dữ liệu cục bộ chưa đồng bộ phải được đồng bộ trước hoặc cảnh báo rõ nếu không thể
+—
+SV_QD_41
+Đồng bộ dữ liệu
+Cập nhật
+Dữ liệu cục bộ là nguồn làm việc chính. Đồng bộ chạy khi có mạng và khi người dùng yêu cầu. Khi cùng một bản ghi bị sửa ở hai thiết bị, bản có thời điểm cập nhật muộn hơn được giữ, bản còn lại được ghi vào lịch sử để người dùng xem lại. Xung đột không được xử lý âm thầm bằng cách xóa dữ liệu
+—
+SV_QD_43
+Cấu hình nhắc nhở
+Cập nhật
+Người dùng bật/tắt từng nhóm nhắc và đặt thời điểm nhắc. Mặc định: cảnh báo ngân sách bật, nhắc thời hạn trước 24 giờ và trước 3 giờ, nhắc sự kiện trước 30 phút, nhắc ghi chép vào 21:00 hằng ngày. Hệ thống phải xin quyền thông báo trước khi bật nhóm nhắc đầu tiên; nếu người dùng từ chối thì hiển thị trạng thái đã tắt kèm hướng dẫn bật lại
+SV_BM_22
+SV_QD_44
+Nhắc thời hạn công việc
+Thông báo
+Chỉ nhắc công việc chưa hoàn thành. Mỗi mốc nhắc gửi một lần cho một công việc. Khi sửa thời hạn, các mốc nhắc được tính lại và mốc đã gửi được đặt lại. Không nhắc lại sau khi công việc đã quá hạn quá 24 giờ
+—
+SV_QD_45
+Nhắc sự kiện sắp diễn ra
+Thông báo
+Nhắc theo từng lần xảy ra của sự kiện, kể cả sự kiện lặp. Lần xảy ra đã bị xóa hoặc phiên đã đánh dấu Đã bỏ thì không nhắc
+—
+SV_QD_46
+Nhắc ghi chép và tạo ngân sách
+Thông báo
+Nếu trong ngày chưa có giao dịch nào thì nhắc ghi chép vào thời điểm cấu hình. Nếu sang tháng mới mà chưa có ngân sách thì nhắc tạo ngân sách, tối đa ba lần trong tháng đó. Không nhắc ghi chép nếu người dùng đã ghi ít nhất một giao dịch trong ngày
+—
+
+5. Phụ lục biểu mẫu
+Mã
+Tên biểu mẫu
+Các trường và ràng buộc
+SV_BM_01
+Tạo ngân sách tháng
+Tháng áp dụng; Tổng ngân sách (VNĐ); Số dư đầu kỳ (VNĐ). Ràng buộc: tháng hợp lệ; tổng ngân sách > 0; số dư đầu kỳ ≥ 0; chưa có ngân sách cho tháng đó
+SV_BM_02
+Phân bổ ngân sách theo danh mục
+Tháng áp dụng; Danh mục; Số tiền phân bổ. Ràng buộc: số tiền ≥ 0; tổng phân bổ ≤ ngân sách tháng; mỗi danh mục chỉ một dòng
+SV_BM_03
+Sửa ngân sách tháng
+Tháng áp dụng; Tổng ngân sách mới; Số dư đầu kỳ; Mức phân bổ mới theo danh mục. Ràng buộc: tổng ngân sách > 0; tổng phân bổ sau sửa ≤ ngân sách mới, nếu không thì chặn lưu
+SV_BM_04
+Ghi nhận khoản thu
+Số tiền; Nguồn thu; Ngày giờ; Ghi chú (tùy chọn). Ràng buộc: số tiền từ 1 đến 999.999.999; nguồn thu không trống
+SV_BM_05
+Ghi nhận khoản chi
+Số tiền; Tên sản phẩm/dịch vụ; Danh mục; Ngày giờ; Ghi chú (tùy chọn); Nguồn nhập: Thủ công / OCR / Trợ lý. Ràng buộc: số tiền từ 1 đến 999.999.999; tên và danh mục hợp lệ
+SV_BM_06
+Sửa giao dịch
+Loại giao dịch; Số tiền; Tên sản phẩm/dịch vụ; Danh mục; Ngày giờ; Ghi chú. Ràng buộc: các trường bắt buộc hợp lệ
+SV_BM_07
+Tạo sự kiện
+Tên; Bắt đầu; Kết thúc; Loại; Lặp hàng tuần; Ngày kết thúc lặp; Task liên quan (tùy chọn); Nguồn tạo: Thủ công / AI / Trợ lý. Ràng buộc: kết thúc > bắt đầu; nếu lặp thì phải có ngày kết thúc chuỗi
+SV_BM_08
+Sửa sự kiện
+Tên; Bắt đầu/kết thúc; Loại; Phạm vi sửa: một lần xảy ra / toàn bộ chuỗi. Ràng buộc: thời gian mới hợp lệ; xung đột thì cảnh báo và cho ghi đè sau xác nhận
+SV_BM_09
+Tạo công việc
+Tên; Thời hạn (ngày + giờ); Mức ưu tiên: Thấp / Trung bình / Cao; Thời lượng ước tính. Ràng buộc: thời lượng > 0; chỉ nhập ngày thì mặc định 23:59; trạng thái ban đầu Chưa thực hiện
+SV_BM_10
+Sửa công việc
+Tên; Thời hạn; Mức ưu tiên; Thời lượng ước tính. Ràng buộc: dữ liệu mới hợp lệ; không tự đổi sự kiện đã tạo
+SV_BM_11
+Xác nhận xóa giao dịch
+Thông tin giao dịch; Xác nhận / Hủy
+SV_BM_12
+Xác nhận xóa sự kiện
+Thông tin sự kiện; Phạm vi xóa nếu lặp; Xác nhận / Hủy
+SV_BM_13
+Xác nhận xóa công việc
+Thông tin công việc; Số sự kiện liên quan còn lại; Xác nhận / Hủy
+SV_BM_14
+Cấu hình sở thích và thời gian cá nhân
+Mục tiêu cá nhân (tùy chọn); Hoạt động quan tâm (tùy chọn); Khung giờ ưu tiên; Khung giờ không khả dụng; Thời gian ngủ; Thời gian đệm (mặc định 15 phút); Độ dài khoảng tối thiểu (mặc định 30 phút); Ngưỡng tập trung (mặc định 90 phút)
+SV_BM_15
+Quản lý danh mục
+Tên danh mục; Biểu tượng (tùy chọn); Trạng thái hiển thị. Ràng buộc: tên không trống, không trùng sau chuẩn hóa
+SV_BM_16
+Xác nhận kết quả nhận dạng hóa đơn
+Ảnh đã chọn; Tổng tiền nhận dạng + mức tin cậy; Tên cửa hàng + mức tin cậy; Ngày + mức tin cậy; Danh mục do AI đề xuất. Ràng buộc: mọi trường đều sửa được; phải xác nhận mới chuyển sang SV_BM_05
+SV_BM_17
+Cập nhật trạng thái phiên
+Thông tin phiên; Task liên quan; Trạng thái: Đã lên lịch / Đã hoàn thành / Đã bỏ; Thời lượng thực tế (tùy chọn)
+SV_BM_18
+Hộp thoại trợ lý
+Nội dung câu hỏi; Lịch sử hội thoại. Ràng buộc: câu hỏi không trống
+SV_BM_19
+Xác nhận thao tác do trợ lý đề nghị
+Loại thao tác; Đối tượng tác động; Bảng đối chiếu giá trị trước và sau; Xác nhận / Sửa lại / Hủy. Ràng buộc: chỉ một thao tác cho một lần xác nhận
+SV_BM_20
+Đăng ký tài khoản
+Email; Mật khẩu; Nhập lại mật khẩu; Tên hiển thị. Ràng buộc: email hợp lệ và chưa tồn tại; mật khẩu ≥ 8 ký tự gồm chữ và số; hai lần nhập khớp nhau
+SV_BM_21
+Đăng nhập
+Email; Mật khẩu. Ràng buộc: thông báo lỗi chung khi sai; tạm khóa 5 phút sau 5 lần sai
+SV_BM_22
+Cấu hình nhắc nhở
+Bật/tắt cảnh báo ngân sách; Mốc nhắc thời hạn; Mốc nhắc sự kiện; Giờ nhắc ghi chép; Bật/tắt nhắc tạo ngân sách
+6. Trạng thái của các đối tượng
+6.1 Công việc (Task)
+Trạng thái công việc chỉ gồm ba giá trị lưu trữ: Chưa thực hiện, Đang thực hiện, Đã hoàn thành. “Quá hạn” không phải trạng thái lưu trữ mà là cờ suy diễn tính lúc hiển thị: Quá hạn = (thời hạn < thời điểm hiện tại) AND (trạng thái ≠ Đã hoàn thành).
+Chuyển tiếp
+Điều kiện
+Ai kích hoạt
+Chưa thực hiện → Đang thực hiện
+Người dùng bắt đầu, hoặc một phiên liên quan được đánh dấu Đã hoàn thành
+Người dùng / hệ thống
+Đang thực hiện → Đã hoàn thành
+Người dùng đánh dấu hoàn thành
+Người dùng
+Chưa thực hiện → Đã hoàn thành
+Người dùng đánh dấu hoàn thành trực tiếp
+Người dùng
+Đã hoàn thành → Đang thực hiện
+Người dùng mở lại công việc
+Người dùng
+Lý do: nếu “Quá hạn” là trạng thái thì không có chuyển tiếp vào hay ra hợp lệ, khiến máy trạng thái không đóng; mô hình hóa thành cờ suy diễn giữ máy trạng thái đóng và kiểm thử được.
+6.2 Phiên học/làm việc (Session)
+Phiên có trạng thái Đã lên lịch, Đã hoàn thành, Đã bỏ. Phiên đã qua giờ kết thúc mà chưa cập nhật thì hiển thị cờ suy diễn Chờ xác nhận; hệ thống hỏi một lần khi người dùng mở ứng dụng. Nhờ trạng thái phiên, “thời lượng còn lại của công việc” (TT_07) mới tính được, vì chỉ phiên Đã hoàn thành mới bị trừ vào thời lượng ước tính. Cập nhật trạng thái phiên qua SV_BM_17.
+6.3 Ngân sách tháng
+Đang hiệu lực (tháng hiện tại hoặc tương lai) và Đã kết thúc (tháng đã qua). Ngân sách Đã kết thúc chỉ đọc; muốn điều chỉnh số liệu quá khứ thì sửa giao dịch chứ không sửa ngân sách.
+6.4 Cờ cảnh báo ngân sách
+Mỗi cặp (tháng, danh mục hoặc tổng) giữ hai cờ đã_cảnh_báo_80 và đã_cảnh_báo_100. Cả hai được đặt lại khi sang tháng mới, khi người dùng sửa hạn mức của danh mục đó, hoặc khi tỷ lệ chi tụt xuống dưới ngưỡng tương ứng do xóa/sửa giao dịch. Không có cơ chế đặt lại thì hệ thống hoặc gửi trùng mỗi lần chi, hoặc im lặng vĩnh viễn sau lần đầu.
+7. Quy tắc nhắc nhở và thông báo
+Mã
+Loại nhắc
+Thời điểm phát
+Điều kiện dừng
+NT_01
+Cảnh báo ngân sách 80%
+Ngay khi một khoản chi đưa tỷ lệ vượt 80% (tổng hoặc theo danh mục)
+Cờ đã_cảnh_báo_80 đã bật
+NT_02
+Cảnh báo vượt ngân sách 100%
+Ngay khi tỷ lệ vượt 100%
+Cờ đã_cảnh_báo_100 đã bật
+NT_03
+Nhắc thời hạn công việc
+Mặc định 24 giờ và 2 giờ trước thời hạn, cấu hình được
+Công việc đã hoàn thành hoặc đã xóa
+NT_04
+Nhắc sự kiện sắp diễn ra
+Mặc định 15 phút trước giờ bắt đầu
+Sự kiện đã xóa hoặc đã dời
+NT_05
+Nhắc ghi chép chi tiêu
+Mỗi ngày vào giờ người dùng chọn, chỉ phát nếu hôm đó chưa có giao dịch
+Đã có giao dịch trong ngày
+NT_06
+Nhắc tạo ngân sách tháng mới
+Ngày cuối tháng và ngày đầu tháng, nếu tháng tới chưa có ngân sách
+Ngân sách tháng đó đã được tạo
+Quy tắc chung : tối đa 6 thông báo mỗi ngày; gộp các nhắc cùng loại trong vòng 30 phút thành một thông báo; không phát trong khung giờ ngủ đã khai báo, trừ NT_04 của sự kiện bắt đầu ngay trong khung đó; mỗi loại có công tắc riêng (SV_BM_22); khi người dùng từ chối quyền thông báo, ứng dụng vẫn chạy và hiển thị nhắc nhở dưới dạng danh sách trong ứng dụng.
+8. Quy tắc tính toán
+Các quy tắc dưới đây là thuộc tính suy diễn: không lưu trong cơ sở dữ liệu, tính lại mỗi lần hiển thị. Chỉ hai thứ được lưu là giao dịch và cấu hình.
+Mã
+Đại lượng
+Công thức
+Ghi chú
+TT_01
+Tổng chi tháng
+Tổng số tiền các giao dịch loại Chi có ngày thuộc tháng đó
+
+TT_02
+Tổng thu tháng
+Tổng số tiền các giao dịch loại Thu có ngày thuộc tháng đó
+
+TT_03
+Số tiền khả dụng
+Số dư đầu kỳ + TT_02 − TT_01
+Số dư đầu kỳ là điều kiện để trả lời câu hỏi “còn bao nhiêu tiền”; thiếu nó thì chỉ trả lời được “đã chi bao nhiêu”
+TT_04
+Tỷ lệ sử dụng ngân sách
+TT_01 / Tổng ngân sách tháng × 100%
+Nếu chưa có ngân sách thì không hiển thị tỷ lệ, không coi là 0%
+TT_05
+Tỷ lệ sử dụng theo danh mục
+Chi của danh mục / Hạn mức danh mục × 100%
+Danh mục không có hạn mức thì bỏ qua, không cảnh báo
+TT_06
+Chi chưa phân bổ
+TT_01 − tổng chi của các danh mục có hạn mức
+Dùng để giải thích chênh lệch giữa TT_04 và tổng TT_05
+TT_07
+Thời lượng còn lại của công việc
+Thời lượng ước tính − tổng thời lượng các phiên có trạng thái Đã hoàn thành
+Kết quả âm được kẹp về 0 và hiển thị “đã vượt ước tính”
+TT_08
+Khoảng thời gian qua nửa đêm
+Khoảng có giờ kết thúc ≤ giờ bắt đầu được hiểu là kéo sang ngày kế tiếp và tách thành hai đoạn trước khi tính toán
+Áp dụng cho giờ ngủ, khung không khả dụng và sự kiện. Nếu không tách, một khung như giờ ngủ 23:00–07:00 sẽ cho thời lượng âm
+TT_09
+Khoảng trống khả dụng
+Lấy khoảng giữa hai sự kiện liền kề, trừ thời gian đệm ở cả hai đầu (mặc định 15 phút), loại bỏ phần giao với giờ ngủ và khung không khả dụng. Chỉ giữ khoảng còn lại ≥ độ dài tối thiểu 30 phút
+Không có đệm thì hệ thống sẽ xếp phiên học dính liền ngay sau giờ học, không có thời gian di chuyển
+TT_10
+Chia nhỏ phiên dài
+Một khoảng trống dài hơn ngưỡng tập trung 90 phút được đề xuất chia thành nhiều phiên, mỗi phiên ≤ 90 phút, giữa hai phiên chèn nghỉ 10 phút
+Đây là định nghĩa duy nhất của ngưỡng 90 phút trong toàn tài liệu, dùng để chia phiên chứ không phải điều kiện loại bỏ khoảng trống
+TT_11
+Chuẩn hóa tên sản phẩm
+Trước khi thống kê: bỏ khoảng trắng đầu/cuối, gộp khoảng trắng liên tiếp, chuyển về chữ thường, bỏ dấu tiếng Việt. Tên gốc vẫn được lưu và hiển thị nguyên trạng
+Không chuẩn hóa thì “Cà phê”, “cà phê” và “ca phe” bị đếm thành ba sản phẩm khác nhau, làm sai thống kê
+TT_12
+Sản phẩm mua nhiều nhất
+Nhóm giao dịch Chi theo tên đã chuẩn hóa (TT_11), sắp theo số lần rồi theo tổng tiền
+Chỉ tính khi có ≥ 3 giao dịch trong kỳ, tránh kết luận từ một mẫu
+TT_13
+Đơn vị tiền và làm tròn
+Chỉ VNĐ; số nguyên, không phần thập phân; giá trị hợp lệ 1 đến 999.999.999; tỷ lệ phần trăm làm tròn đến số nguyên gần nhất
+
+TT_14
+Múi giờ
+Toàn bộ ngày giờ dùng múi giờ thiết bị tại thời điểm ghi và lưu kèm độ lệch múi giờ, để dữ liệu không lệch khi người dùng đổi múi giờ
+
+9. Phân định phần việc của AI
+Bảng này tách rạch ròi ba loại: việc AI làm (sinh nội dung, suy luận ngôn ngữ), việc hệ thống làm (tính toán xác định, kiểm tra ràng buộc), việc người dùng làm (quyết định).
+Mã
+Nội dung
+Ai thực hiện
+Đầu vào gửi đi
+Đầu ra
+AI_01
+Đề xuất khung giờ học/làm việc
+AI
+Danh sách khoảng trống đã tính bởi TT_09, thời hạn và mức ưu tiên của công việc, cấu hình sở thích
+Danh sách phiên đề xuất
+AI_02
+Đề xuất hoạt động rèn luyện
+AI
+Hoạt động quan tâm, khoảng trống khả dụng
+Danh sách gợi ý
+AI_03
+Nhận xét thói quen chi tiêu
+AI
+Số liệu tổng hợp theo danh mục (không gửi tên sản phẩm, không gửi ghi chú)
+Đoạn nhận xét ngắn
+AI_04
+Kiểm tra xung đột thời gian của phiên đề xuất
+Hệ thống
+—
+Danh sách xung đột
+AI_05
+Kiểm tra phiên có nằm trong giờ ngủ / khung không khả dụng
+Hệ thống
+—
+Đạt / Không đạt
+AI_06
+Kiểm tra tổng thời lượng đề xuất không vượt thời lượng còn lại (TT_07)
+Hệ thống
+—
+Đạt / Không đạt
+AI_07
+Nhận dạng chữ trên ảnh hóa đơn
+Thư viện OCR trên thiết bị
+Ảnh không rời khỏi thiết bị
+Văn bản thô + vị trí
+AI_08
+Trích ba trường từ văn bản OCR
+AI hoặc quy tắc
+Văn bản thô đã che số thẻ nếu nhận ra
+Tổng tiền, tên cửa hàng, ngày, kèm mức tin cậy từng trường
+AI_09
+Đề xuất danh mục cho khoản chi
+AI
+Tên cửa hàng, tên sản phẩm
+Một danh mục kèm mức tin cậy
+AI_10
+Hiểu câu hỏi của người dùng và chọn hành động
+AI
+Câu hỏi, lịch sử hội thoại đã rút gọn, danh mục hiện có
+Ý định + tham số
+AI_11
+Tổng hợp câu trả lời
+AI
+Kết quả truy vấn do hệ thống thực hiện
+Câu trả lời văn bản
+AI_04–AI_06 là việc tính toán xác định nên do hệ thống thực hiện, không phải AI. Kết quả kiểm tra của hệ thống có quyền phủ quyết đề xuất của AI: phiên nào không đạt thì bị loại trước khi hiển thị cho người dùng.
+Nguyên tắc bắt buộc: AI không trực tiếp ghi vào dữ liệu nghiệp vụ. Mọi kết quả từ AI đều đi qua một biểu mẫu xác nhận (SV_BM_16 cho hóa đơn, SV_BM_19 cho thao tác trợ lý, SV_BM_07 cho phiên đề xuất). Khóa API của nhà cung cấp AI nằm ở server, không nằm trong ứng dụng Android.
+10. Xử lý khi AI không dùng được
+AI là thành phần bắt buộc của MVP, nên phải có luồng dự phòng để ứng dụng vẫn dùng được khi AI không phản hồi. Bảng dưới quy định các luồng đó.
+Tình huống
+Hành vi
+Mất mạng
+Toàn bộ chức năng ghi chép, xem thống kê, lịch, nhắc nhở vẫn hoạt động trên dữ liệu cục bộ. Các chức năng cần AI hiển thị trạng thái “cần kết nối mạng” và cho phép thử lại
+Server hoặc dịch vụ AI lỗi
+Hiển thị thông báo lỗi kèm nút thử lại. Với đề xuất lịch, hệ thống cung cấp cơ chế dự phòng không dùng AI: xếp công việc theo thời hạn gần nhất rồi đến mức ưu tiên cao, đặt vào các khoảng trống của TT_09 theo thứ tự sớm nhất trước
+Hết hạn mức gọi AI
+Thông báo rõ số lượt còn lại và thời điểm đặt lại. Cơ chế dự phòng ở trên vẫn dùng được
+OCR không đọc được ảnh
+Không chặn người dùng: mở SV_BM_05 với các trường trống để nhập tay, giữ lại ảnh làm minh chứng
+AI trả về dữ liệu sai định dạng
+Hệ thống loại bỏ kết quả, ghi nhận lỗi và coi như AI không phản hồi. Không bao giờ hiển thị dữ liệu chưa qua kiểm tra định dạng
+Trợ lý không hiểu câu hỏi
+Trả lời rằng chưa hiểu và gợi ý 3 câu hỏi mẫu, thay vì đoán rồi thực hiện thao tác sai
+Giới hạn chi phí: mỗi người dùng có hạn mức lượt gọi AI theo ngày (đề xuất 50 lượt hội thoại, 30 lượt OCR, 10 lượt sinh lịch). Đây là ràng buộc nghiệp vụ, không chỉ là chi tiết kỹ thuật, vì nó quyết định trải nghiệm khi hết lượt.
+11. Các trường hợp đặc biệt
+Mã
+Tình huống
+Cách xử lý
+DB_01
+Giảm ngân sách tháng xuống dưới tổng phân bổ hiện có
+Không chặn cứng. Hệ thống hiển thị chênh lệch và ba lựa chọn: giảm tỷ lệ đều tất cả danh mục, tự người dùng sửa từng danh mục, hoặc hủy thao tác. Không được chỉ báo lỗi rồi chặn, vì như vậy người dùng bế tắc: muốn giảm ngân sách phải giảm phân bổ trước nhưng lại không có chỗ làm cùng lúc
+DB_02
+Xóa danh mục đang có giao dịch
+Không xóa cứng. Danh mục được chuyển sang trạng thái ẩn, giao dịch cũ giữ nguyên tham chiếu và vẫn hiển thị trong thống kê quá khứ
+DB_03
+Xóa công việc có sự kiện liên quan
+Hỏi rõ: xóa cả các sự kiện liên quan, hay giữ sự kiện và bỏ liên kết. Số sự kiện bị ảnh hưởng hiển thị trên hộp thoại (SV_BM_13)
+DB_04
+Sửa một lần xảy ra của sự kiện lặp
+Tạo bản ngoại lệ cho lần đó, chuỗi gốc không đổi. Sửa toàn chuỗi thì áp dụng từ lần xảy ra kế tiếp trở đi, các lần đã qua giữ nguyên
+DB_05
+Xung đột thời gian
+Áp dụng một quy tắc duy nhất cho mọi nguồn tạo sự kiện (thủ công, AI, trợ lý): cảnh báo, hiển thị sự kiện đang xung đột, cho phép ghi đè sau khi xác nhận. Quy tắc này áp dụng như nhau cho tạo thủ công và chấp nhận đề xuất AI, không xử lý bất đối xứng giữa hai luồng
+DB_06
+Giao dịch có ngày trong tương lai
+Cho phép nhập nhưng không tính vào tổng chi tháng hiện tại cho tới khi đến ngày đó, và có nhãn phân biệt
+DB_07
+Tháng chưa có ngân sách
+Vẫn ghi chép bình thường. Không cảnh báo ngân sách, không hiển thị tỷ lệ; thay vào đó hiển thị nhắc NT_06
+DB_08
+Hóa đơn cùng ảnh được nhận dạng hai lần
+Hệ thống phát hiện trùng theo (tổng tiền, cửa hàng, ngày) trong vòng 24 giờ và hỏi người dùng có phải giao dịch trùng không, không tự chặn
+DB_09
+Dữ liệu thay đổi ở hai thiết bị
+Bản có thời điểm sửa muộn hơn được giữ, bản còn lại được lưu vào lịch sử để phục hồi. Không bao giờ xóa âm thầm dữ liệu khi hợp nhất
+DB_10
+Đăng nhập lần đầu trên thiết bị đã có dữ liệu cục bộ
+Hỏi người dùng: gộp dữ liệu cục bộ vào tài khoản, hay giữ riêng. Không tự động gộp
+DB_11
+Đổi giờ ngủ khiến các phiên đã lên lịch rơi vào giờ ngủ
+Không tự xóa phiên. Đánh dấu các phiên bị ảnh hưởng và đề nghị xếp lại
+DB_12
+Công việc có thời hạn đã qua khi tạo mới
+Cho phép tạo (dùng để ghi nhận việc trễ) nhưng cảnh báo và không sinh nhắc NT_03
+12. Phạm vi MVP và lộ trình
+Tài liệu gồm 48 use case (mã SV_QD_01 đến SV_QD_48) và 22 biểu mẫu (mã SV_BM_01 đến SV_BM_22).
+Giai đoạn
+Nội dung
+Use case
+Giai đoạn 1 — Lõi không AI
+Tài khoản, ngân sách, danh mục, giao dịch, thống kê, công việc, sự kiện, lịch, nhắc nhở
+SV_QD_01–25, 34–46
+Giai đoạn 2 — OCR
+Chụp/chọn ảnh, nhận dạng trên thiết bị, xác nhận ba trường, đề xuất danh mục
+SV_QD_35, 37, 42
+Giai đoạn 3 — Đề xuất lịch bằng AI
+Sinh phiên, kiểm tra bằng hệ thống, chấp nhận từng phiên, dự phòng không AI
+SV_QD_26–33
+Giai đoạn 4 — Trợ lý hội thoại
+Truy vấn nhiều bước tự động, thao tác ghi có xác nhận từng lần
+SV_QD_47–48
+Khuyến nghị về phạm vi: giai đoạn 1 phải chạy hoàn chỉnh và độc lập trước khi làm bất cứ phần AI nào. Nếu thời gian dự án bị cắt, thứ tự bỏ là giai đoạn 4 trước, rồi giai đoạn 3; không bỏ giai đoạn 2 vì OCR là điểm khác biệt rõ nhất mà lại rẻ nhất về công sức.
+13. Ràng buộc kỹ thuật cần biết khi làm nghiệp vụ
+Các điểm dưới đây không phải chi tiết lập trình mà là ràng buộc của nền tảng Android, đủ sức làm sai nghiệp vụ nếu không tính trước.
+Nhắc nhở đúng giờ trên Android không được bảo đảm. Kể từ Android 6, chế độ Doze trì hoãn công việc nền, nên nhắc “15 phút trước sự kiện” có thể tới muộn. Nhắc phải đúng phút thì cần báo thức chính xác, và từ Android 13 loại quyền này bị siết; từ Android 14 ứng dụng thông thường phải xin quyền riêng. Vì vậy nghiệp vụ nên phát biểu là “nhắc trong khoảng 15 phút trước sự kiện” thay vì “đúng 15 phút”, và mỗi nhắc nhở đều phải có bản sao trong danh sách trong ứng dụng để không mất thông tin nếu thông báo bị chặn.
+Quyền thông báo từ Android 13 phải xin lúc chạy và người dùng có thể từ chối vĩnh viễn. Toàn bộ NT_01–NT_06 do đó là chức năng có thể bị vô hiệu, và mọi nội dung nhắc phải xem được lại trong ứng dụng.
+Một số nhà sản xuất Trung Quốc tắt nền ứng dụng rất mạnh, khiến nhắc nhở không chạy nếu ứng dụng không nằm trong danh sách loại trừ tối ưu hóa pin. Cần một bước hướng dẫn người dùng thêm loại trừ này khi bật nhắc nhở lần đầu.
+OCR nên chạy trên thiết bị thay vì gửi ảnh lên server: ảnh hóa đơn có thể chứa số thẻ và thông tin cá nhân, và OCR trên thiết bị hoạt động cả khi mất mạng. Chỉ văn bản đã trích mới gửi đi để trích ba trường, nếu cần dùng AI cho bước đó.
+Sự kiện lặp hàng tuần kèm ngoại lệ là phần khó nhất về dữ liệu của phần lịch. Nếu thời gian hạn chế, giai đoạn 1 nên chỉ hỗ trợ chuỗi lặp có ngày kết thúc và xóa/sửa theo toàn chuỗi; ngoại lệ cho một lần xảy ra (DB_04) đưa sang sau.
+Đồng bộ hai chiều giữa thiết bị và server thường tốn công hơn cả phần AI. Với dự án môn học, nên làm đồng bộ một chiều lên server để sao lưu và đăng nhập lại lấy về, chưa cần giải quyết trọn vẹn xung đột nhiều thiết bị.
+14. Câu hỏi cần làm rõ
+Những điểm dưới đây đã được tạm chọn một phương án để tài liệu khép kín và sinh mã được ngay; phương án đang áp dụng ghi trong ngoặc. Nếu người ra quyết định chọn khác, chỉ cần sửa đúng mục tương ứng.
+Mã
+Câu hỏi
+Ảnh hưởng nếu chọn khác
+CH_01
+Bốn con số 90% / 20% / 80% / 50% ở mục 2 lấy từ khảo sát nào? (đang giữ số kèm ghi chú cần dẫn nguồn)
+20% và 90% mâu thuẫn nhau về logic. Nếu không có nguồn thì nên bỏ hẳn số, chỉ giữ phát biểu định tính
+CH_02
+Số dư đầu kỳ khai báo mỗi tháng hay chỉ khai một lần rồi tự chuyển tiếp? (đang: khai mỗi tháng, có thể để 0)
+Ảnh hưởng TT_03 và toàn bộ cách hiểu “số tiền khả dụng”
+CH_03
+Ngân sách theo tháng dương lịch hay theo kỳ tùy chọn như từ ngày nhận trợ cấp? (đang: tháng dương lịch)
+Kỳ tùy chọn làm phức tạp toàn bộ mục 8
+CH_04
+Danh mục là danh sách cố định hay người dùng tự tạo? (đang: có sẵn danh sách mặc định, người dùng thêm/ẩn được — SV_QD_43)
+Danh mục tự do khiến AI_09 khó đề xuất chính xác
+CH_05
+Trợ lý được phép tạo giao dịch, công việc, sự kiện. Có được phép sửa dữ liệu đã có không? (đang: được, nhưng phải xác nhận từng thao tác)
+Nếu không cho sửa thì SV_QD_48 thu hẹp lại, giảm rủi ro đáng kể
+CH_06
+Khi trợ lý tự hành động nhiều bước, có giới hạn số bước không? (đang: tối đa 5 bước đọc liên tiếp)
+Không giới hạn thì chi phí và thời gian phản hồi không kiểm soát được
+CH_07
+Ngoài tiếng Việt, trợ lý có cần xử lý hóa đơn hoặc câu hỏi tiếng Anh? (đang: chỉ tiếng Việt)
+Ảnh hưởng lựa chọn thư viện OCR và cách chuẩn hóa tên
+CH_08
+Người dùng có được xuất và xóa toàn bộ dữ liệu của mình không? (đang: có — SV_QD_45, 46)
+Đây là yêu cầu gần như bắt buộc khi đã có tài khoản và server
+CH_09
+Có nhiều người dùng chia sẻ một ngân sách (ví dụ ở ghép) không? (đang: không, mỗi tài khoản độc lập)
+Nếu có thì mô hình dữ liệu và phân quyền đổi hoàn toàn
+CH_10
+Mức tin cậy OCR bao nhiêu thì tự điền sẵn, bao nhiêu thì để trống? (đang: ≥ 0,7 điền sẵn, thấp hơn thì hiển thị nhưng đánh dấu cần kiểm tra)
+Ngưỡng quá thấp sinh dữ liệu sai âm thầm
+CH_11
+Dữ liệu gửi cho dịch vụ AI có được dùng để huấn luyện không, và người dùng có được thông báo? (đang: phải nêu trong điều khoản và tắt huấn luyện ở phía nhà cung cấp)
+Vấn đề pháp lý và quyền riêng tư, không phải lựa chọn kỹ thuật
+CH_12
+Thời hạn công việc chỉ có ngày thì mặc định 23:59 — đúng ý không? (đang: 23:59 cùng ngày)
+Ảnh hưởng cờ quá hạn và nhắc NT_03
+15. Danh sách đối chiếu trước khi lập trình
+Mỗi dòng dưới đây là một điều kiện có thể kiểm tra được, dùng để nghiệm thu tài liệu chứ không phải để nghiệm thu sản phẩm.
+Mọi use case có mã liên tục từ SV_QD_01 đến SV_QD_48, không trùng, không thiếu. Mọi biểu mẫu có mã liên tục từ SV_BM_01 đến SV_BM_22. Mỗi biểu mẫu được ít nhất một use case tham chiếu, và mỗi tham chiếu biểu mẫu trong bảng use case đều trỏ tới một biểu mẫu tồn tại. Mỗi trạng thái ở mục 6 có ít nhất một chuyển tiếp vào và một chuyển tiếp ra, trừ trạng thái khởi đầu. Mỗi thuộc tính suy diễn ở mục 8 có công thức chỉ dùng dữ liệu được lưu hoặc thuộc tính suy diễn khác, không có phụ thuộc vòng. Mỗi chức năng phụ thuộc AI ở mục 9 có một dòng dự phòng tương ứng ở mục 10. Mỗi nhắc nhở ở mục 7 có điều kiện phát và điều kiện dừng. Mỗi câu hỏi CH_01–CH_12 có một phương án tạm chọn để tài liệu vẫn khép kín khi chưa có câu trả lời.
