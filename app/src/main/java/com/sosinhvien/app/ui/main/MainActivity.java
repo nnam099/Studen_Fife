@@ -35,6 +35,27 @@ public class MainActivity extends AppCompatActivity {
         binding.fabAdd.setOnClickListener(v -> showQuickAddSheet());
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        com.sosinhvien.app.data.sync.SyncManager.getInstance(this).triggerSync(new com.sosinhvien.app.data.sync.SyncManager.SyncCallback() {
+            @Override
+            public void onSuccess() {
+                runOnUiThread(() -> {
+                    Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                    if (current != null && current.isAdded()) {
+                        current.onResume();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                // Fail silently in background
+            }
+        });
+    }
+
     private boolean onNavItemSelected(@NonNull MenuItem item) {
         Fragment fragment;
         int id = item.getItemId();

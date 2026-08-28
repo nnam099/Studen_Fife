@@ -34,21 +34,7 @@ public class FinanceFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         binding = FragmentFinanceBinding.inflate(inflater, container, false);
 
-        MockDataRepository repo = MockDataRepository.getInstance();
-        Budget budget = repo.getCurrentBudget();
-
-        binding.textRemaining.setText(CurrencyFormatter.format(budget.getRemaining()));
-        binding.textBudgetSub.setText("Còn lại của " + CurrencyFormatter.format(budget.getTotalBudget()));
-        binding.textSpent.setText("Đã chi " + CurrencyFormatter.format(budget.getSpent())
-                + " • " + budget.getUsagePercent() + "%");
-        binding.progressBudget.setProgress(budget.getUsagePercent());
-        binding.progressBudget.setIndicatorColor(ContextCompat.getColor(requireContext(),
-                budget.getUsagePercent() >= 100 ? R.color.danger
-                        : budget.getUsagePercent() >= 80 ? R.color.warning : R.color.primary_container));
-
         binding.recyclerTransactions.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new TransactionAdapter(repo.getTransactionsFiltered(currentFilter));
-        binding.recyclerTransactions.setAdapter(adapter);
 
         binding.chipAll.setOnClickListener(v -> applyFilter("Tất cả"));
         binding.chipIncome.setOnClickListener(v -> applyFilter("Thu"));
@@ -77,5 +63,29 @@ public class FinanceFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshData();
+    }
+
+    private void refreshData() {
+        if (binding == null) return;
+        MockDataRepository repo = MockDataRepository.getInstance();
+        Budget budget = repo.getCurrentBudget();
+
+        binding.textRemaining.setText(CurrencyFormatter.format(budget.getRemaining()));
+        binding.textBudgetSub.setText("Còn lại của " + CurrencyFormatter.format(budget.getTotalBudget()));
+        binding.textSpent.setText("Đã chi " + CurrencyFormatter.format(budget.getSpent())
+                + " • " + budget.getUsagePercent() + "%");
+        binding.progressBudget.setProgress(budget.getUsagePercent());
+        binding.progressBudget.setIndicatorColor(ContextCompat.getColor(requireContext(),
+                budget.getUsagePercent() >= 100 ? R.color.danger
+                        : budget.getUsagePercent() >= 80 ? R.color.warning : R.color.primary_container));
+
+        adapter = new TransactionAdapter(repo.getTransactionsFiltered(currentFilter));
+        binding.recyclerTransactions.setAdapter(adapter);
     }
 }

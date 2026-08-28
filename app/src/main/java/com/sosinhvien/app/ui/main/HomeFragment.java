@@ -32,23 +32,7 @@ public class HomeFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
 
-        SessionManager session = new SessionManager(requireContext());
-        MockDataRepository repo = MockDataRepository.getInstance();
-        Budget budget = repo.getCurrentBudget();
-
-        binding.textGreeting.setText("Chào bạn, " + session.getDisplayName() + "!");
-        binding.textMonth.setText(budget.getMonthLabel());
-        binding.textBalance.setText(CurrencyFormatter.format(budget.getAvailableBalance()));
-
-        int percent = budget.getUsagePercent();
-        binding.textBudgetPercent.setText(percent + "%");
-        binding.textBudgetPercent.setTextColor(ContextCompat.getColor(requireContext(),
-                percent >= 100 ? R.color.danger : percent >= 80 ? R.color.warning : R.color.success));
-        binding.textBudgetDetail.setText("Đã chi " + CurrencyFormatter.formatShort(budget.getSpent())
-                + " / " + CurrencyFormatter.formatShort(budget.getTotalBudget()));
-
         binding.recyclerReminders.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.recyclerReminders.setAdapter(new ReminderAdapter(repo.getTodayReminders()));
 
         binding.textUpcomingEvent.setText("14:00 - 16:30 • Học Thể chất - Sân B2");
 
@@ -66,5 +50,31 @@ public class HomeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshHomeData();
+    }
+
+    private void refreshHomeData() {
+        if (binding == null) return;
+        SessionManager session = new SessionManager(requireContext());
+        MockDataRepository repo = MockDataRepository.getInstance();
+        Budget budget = repo.getCurrentBudget();
+
+        binding.textGreeting.setText("Chào bạn, " + session.getDisplayName() + "!");
+        binding.textMonth.setText(budget.getMonthLabel());
+        binding.textBalance.setText(CurrencyFormatter.format(budget.getAvailableBalance()));
+
+        int percent = budget.getUsagePercent();
+        binding.textBudgetPercent.setText(percent + "%");
+        binding.textBudgetPercent.setTextColor(ContextCompat.getColor(requireContext(),
+                percent >= 100 ? R.color.danger : percent >= 80 ? R.color.warning : R.color.success));
+        binding.textBudgetDetail.setText("Đã chi " + CurrencyFormatter.formatShort(budget.getSpent())
+                + " / " + CurrencyFormatter.formatShort(budget.getTotalBudget()));
+
+        binding.recyclerReminders.setAdapter(new ReminderAdapter(repo.getTodayReminders()));
     }
 }

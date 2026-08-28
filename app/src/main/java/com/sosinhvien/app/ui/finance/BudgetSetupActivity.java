@@ -31,8 +31,25 @@ public class BudgetSetupActivity extends AppCompatActivity {
                 "Tổng phân bổ: " + CurrencyFormatter.format(budget.getSpent())
                         + " / " + CurrencyFormatter.format(budget.getTotalBudget()));
 
-        binding.btnSave.setOnClickListener(v ->
-                Toast.makeText(this, "Đã lưu ngân sách (demo mock)", Toast.LENGTH_SHORT).show());
+        binding.btnSave.setOnClickListener(v -> {
+            String totalStr = binding.editTotalBudget.getText() != null ? binding.editTotalBudget.getText().toString().trim() : "0";
+            String openingStr = binding.editOpeningBalance.getText() != null ? binding.editOpeningBalance.getText().toString().trim() : "0";
+            long total = 0;
+            long opening = 0;
+            try {
+                total = Long.parseLong(totalStr);
+                opening = Long.parseLong(openingStr);
+            } catch (NumberFormatException ignored) {}
+
+            if (total <= 0) {
+                Toast.makeText(this, "Tổng ngân sách phải lớn hơn 0", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            MockDataRepository.getInstance().saveBudget(total, opening);
+            Toast.makeText(this, "Đã lưu ngân sách thành công", Toast.LENGTH_SHORT).show();
+            finish();
+        });
     }
 
     @Override
