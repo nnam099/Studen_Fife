@@ -28,13 +28,23 @@ public class CalendarFragment extends Fragment {
 
         binding.textMonthLabel.setText("Tháng 10, 2025");
         binding.recyclerEvents.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.recyclerEvents.setAdapter(
-                new CalendarEventAdapter(MockDataRepository.getInstance().getTodayEvents()));
 
         binding.btnAiSchedule.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), AiScheduleActivity.class)));
 
         return binding.getRoot();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshEvents();
+    }
+
+    private void refreshEvents() {
+        if (binding == null) return;
+        binding.recyclerEvents.setAdapter(
+                new CalendarEventAdapter(MockDataRepository.getInstance().getTodayEvents()));
     }
 
     @Override

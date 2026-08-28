@@ -37,15 +37,78 @@ public class RegisterFragment extends Fragment {
             String password = editPassword.getText() != null ? editPassword.getText().toString() : "";
             String confirm = editConfirm.getText() != null ? editConfirm.getText().toString() : "";
 
-            if (email.isEmpty() || password.length() < 8 || !password.equals(confirm)) {
-                Toast.makeText(requireContext(), "Vui lòng kiểm tra thông tin đăng ký", Toast.LENGTH_SHORT).show();
+            if (email.isEmpty() || name.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
+                Toast.makeText(requireContext(), "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            SessionManager session = new SessionManager(requireContext());
-            session.login(email, name);
-            startActivity(new Intent(requireContext(), OnboardingActivity.class));
-            requireActivity().finish();
+            if (password.length() < 8) {
+                Toast.makeText(requireContext(), "Mật khẩu phải chứa ít nhất 8 ký tự", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!password.equals(confirm)) {
+                Toast.makeText(requireContext(), "Xác nhận mật khẩu không khớp", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            btnRegister.setEnabled(false);
+
+            // 1. Try Online Registration First
+            com.sosinhvien.app.data.network.ApiClient.getApiService(requireContext())
+                    .register(new com.sosinhvien.app.data.network.model.AuthModels.RegisterRequest(email, password, name))
+                    .enqueue(new retrofit2.Callback<com.sosinhvien.app.data.network.model.AuthModels.AuthResponse>() {
+                        @Override
+                        public void onResponse(retrofit2.Call<com.sosinhvien.app.data.network.model.AuthModels.AuthResponse> call,
+                                               retrofit2.Response<com.sosinhvien.app.data.network.model.AuthModels.AuthResponse> response) {
+                            if (!isAdded()) return;
+                            btnRegister.setEnabled(true);
+                            if (response.isSuccessful() && response.body() != null) {
+                                com.sosinhvien.app.data.network.model.AuthModels.AuthResponse authRes = response.body();
+                                SessionManager session = new SessionManager(requireContext());
+                                session.login(authRes.email, authRes.displayName, authRes.token);
+
+                                // Save user profile locally
+                                com.sosinhvien.app.data.MockDataRepository.getInstance().saveUserLocally(authRes.email, authRes.displayName);
+
+                                // Trigger initial background sync
+                                com.sosinhvien.app.data.sync.SyncManager.getInstance(requireContext()).triggerSync(null);
+
+                                Toast.makeText(requireContext(), "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(requireContext(), OnboardingActivity.class));
+                                requireActivity().finish();
+                            } else {
+                                try {
+                                    String errorBodyStr = response.errorBody() != null ? response.errorBody().string() : "";
+                                    String message = "Đăng ký thất bại.";
+                                    if (errorBodyStr.contains("message")) {
+                                        message = new org.json.JSONObject(errorBodyStr).optString("message", message);
+                                    }
+                                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                                } catch (Exception e) {
+                                    Toast.makeText(requireContext(), "Đăng ký không thành công.", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(retrofit2.Call<com.sosinhvien.app.data.network.model.AuthModels.AuthResponse> call, Throwable t) {
+                            if (!isAdded()) return;
+                            btnRegister.setEnabled(true);
+
+                            // 2. Fallback to Local Registration
+                            if (com.sosinhvien.app.data.MockDataRepository.getInstance().registerUser(email, password, name)) {
+                                SessionManager session = new SessionManager(requireContext());
+                                session.login(email, name, ""); // local token is empty
+
+                                Toast.makeText(requireContext(), "Đăng ký ngoại tuyến thành công!", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(requireContext(), OnboardingActivity.class));
+                                requireActivity().finish();
+                            } else {
+                                Toast.makeText(requireContext(), "Đăng ký thất bại: Không kết nối máy chủ hoặc email đã tồn tại ngoại tuyến.", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
         });
 
         return view;
