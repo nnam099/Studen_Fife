@@ -1,6 +1,6 @@
 # Studen_Fife — Sổ Sinh Viên (Student Life)
 
-Ứng dụng demo **Quản lý chi tiêu & thời gian cho sinh viên**, mở bằng Android Studio. Dữ liệu mock để visualize giao diện và luồng nghiệp vụ.
+Ứng dụng Android hiện tại là **100% Kotlin + Jetpack Compose** cho UI, với backend NestJS và PostgreSQL. Code demo Java/XML cũ đã được loại bỏ khỏi nhánh làm việc chính. Bản snapshot trước khi xóa được lưu tại branch `legacy-demo-backup` (commit `4d970e4`).
 
 ## Yêu cầu
 
@@ -19,25 +19,28 @@
 - Chọn emulator hoặc thiết bị thật (API 24+)
 - Run `app`
 
-### Tài khoản demo
+Build debug từ command line:
 
-| Email | Mật khẩu |
-|-------|----------|
-| `demo@truong.edu.vn` | `demo1234` |
+```bash
+./gradlew assembleDebug
+```
 
-Hoặc đăng ký tài khoản mới (validation cơ bản, không lưu server).
+Gradle ưu tiên JDK 17: wrapper dùng `JAVA_HOME` nếu đã đặt, nếu chưa thì tự tìm JDK 17 trong các vị trí cài đặt phổ biến. Nếu máy không có JDK 17, cài JDK 17 hoặc đặt `JAVA_HOME` tới JDK 17 trước khi build.
 
-## Cấu trúc màn hình
+Đăng ký hoặc đăng nhập bằng tài khoản backend thật. Base URL mặc định cho emulator là `http://10.0.2.2:3000/api/v1/` và có thể override bằng `-PbackendBaseUrl=...`.
+
+## Cấu trúc màn hình hiện tại
 
 | Màn hình | Mô tả |
 |----------|--------|
-| Splash → Auth | Đăng nhập / Đăng ký |
-| Onboarding | 3 bước cấu hình (giờ ngủ, học/làm, sở thích) |
-| Trang chủ | Số dư, ngân sách, nhắc nhở, sắp tới |
-| Chi tiêu | Ngân sách, giao dịch, thống kê, danh mục |
-| Lịch | Lịch tháng, sự kiện/công việc, đề xuất AI |
-| Trợ lý | Chat demo với mock phản hồi |
-| Cài đặt | Tài khoản, nhắc nhở, dark mode, đăng xuất |
+| Login/Register | Gọi backend thật, lưu token mã hóa |
+| Onboarding | Compose placeholder |
+| Home/Dashboard | Compose placeholder, có refresh session |
+| Thêm chi tiêu | Compose placeholder |
+| Ngân sách | Compose placeholder |
+| Deadline | Compose placeholder |
+| Báo cáo | Compose placeholder |
+| Cài đặt | Compose placeholder |
 
 ## Sơ đồ luồng
 
@@ -49,11 +52,12 @@ Xem file: [`docs/app_flow_diagram.svg`](docs/app_flow_diagram.svg)
 - UX/UI prompt: `Stitch_Prompt_UX_UI.md`
 - Chi tiết giao diện: thư mục `ui/`
 
-## Ghi chú demo
+## Sprint 1
 
-- Không kết nối backend / database
-- OCR, AI, thông báo là mock UI
-- Mọi thao tác "Lưu" hiển thị Toast và quay lại màn trước
+- Retrofit + OkHttp kết nối API auth
+- Access token và refresh token lưu bằng `EncryptedSharedPreferences`
+- Navigation shell gồm 8 màn hình Compose
+- Backend và database chạy bằng Docker Compose
 
 ## Nhóm phát triển
 
