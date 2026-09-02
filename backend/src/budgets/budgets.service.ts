@@ -47,9 +47,9 @@ export class BudgetsService {
 
   async update(userId: string, id: string, dto: UpdateBudgetDto) {
     const budget = await this.findOne(userId, id);
-    const start = dto.startDate ? new Date(dto.startDate) : budget.startDate;
-    const end = dto.endDate ? new Date(dto.endDate) : budget.endDate;
-    this.validateDates(start.toISOString(), end.toISOString());
+    const start = new Date(dto.startDate || budget.startDate);
+    const end = new Date(dto.endDate || budget.endDate);
+    this.validateDates(start, end);
     if (dto.academicTermId) {
       const term = await this.terms.findOne({ where: { id: dto.academicTermId, user: { id: userId } } });
       if (!term) throw new NotFoundException('Academic term not found');
@@ -60,9 +60,11 @@ export class BudgetsService {
       if (!category) throw new NotFoundException('Category not found');
       budget.category = category;
     }
-    Object.assign(budget, { ...dto, startDate: start, endDate: end });
-    delete (budget as any).academicTermId;
-    delete (budget as any).categoryId;
+    if (dto.amount !== undefined) budget.amount = dto.amount;
+    if (dto.periodType !== undefined) budget.periodType = dto.periodType;
+    if (dto.currency !== undefined) budget.currency = dto.currency;
+    budget.startDate = start;
+    budget.endDate = end;
     return this.repository.save(budget);
   }
 
@@ -72,7 +74,7 @@ export class BudgetsService {
     return { deleted: true, id };
   }
 
-  private validateDates(startDate: string, endDate: string) {
+  private validateDates(startDate: string | Date, endDate: string | Date) {
     if (new Date(endDate) < new Date(startDate)) throw new BadRequestException('endDate must be on or after startDate');
   }
 }
