@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -31,21 +32,25 @@ export class Transaction {
   createdAt: Date;
 
   @ManyToOne(() => User, (user) => user.transactions, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => Category, (category) => category.transactions, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'category_id' })
   category: Category;
 
   @ManyToOne(() => AcademicTerm, (academicTerm) => academicTerm.transactions, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'academic_term_id' })
   academicTerm: AcademicTerm;
 
   @ManyToOne(() => Milestone, (milestone) => milestone.transactions, {
     onDelete: 'SET NULL',
     nullable: true,
   })
+  @JoinColumn({ name: 'milestone_id' })
   milestone: Milestone | null;
 }

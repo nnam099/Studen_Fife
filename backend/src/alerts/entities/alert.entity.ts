@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -41,22 +42,26 @@ export class Alert {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.alerts, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => AcademicTerm, (academicTerm) => academicTerm.alerts, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'academic_term_id' })
   academicTerm: AcademicTerm;
 
   @ManyToOne(() => Budget, (budget) => budget.alerts, {
     nullable: true,
     onDelete: 'SET NULL',
   })
+  @JoinColumn({ name: 'budget_id' })
   budget: Budget | null;
 
   @ManyToOne(() => Milestone, (milestone) => milestone.alerts, {
     nullable: true,
     onDelete: 'SET NULL',
   })
+  @JoinColumn({ name: 'milestone_id' })
   milestone: Milestone | null;
 }

@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -20,7 +21,7 @@ export class Budget {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   amount: number;
 
-  @Column({ type: 'varchar', default: 'weekly' })
+  @Column({ type: 'varchar', name: 'period_type', default: 'weekly' })
   periodType: 'weekly' | 'monthly' | 'academic_term';
 
   @Column({ type: 'date', name: 'start_date' })
@@ -39,16 +40,19 @@ export class Budget {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.budgets, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => AcademicTerm, (academicTerm) => academicTerm.budgets, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'academic_term_id' })
   academicTerm: AcademicTerm;
 
   @ManyToOne(() => Category, (category) => category.budgets, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'category_id' })
   category: Category;
 
   @OneToMany(() => Alert, (alert) => alert.budget)

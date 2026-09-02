@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -35,6 +36,7 @@ export class Category {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.categories, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @OneToMany(() => Budget, (budget) => budget.category)

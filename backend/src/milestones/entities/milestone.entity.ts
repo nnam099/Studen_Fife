@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -29,7 +30,7 @@ export class Milestone {
   @Column({ type: 'varchar', default: 'exam' })
   type: 'exam' | 'assignment' | 'fee' | 'personal_goal';
 
-  @Column({ default: false })
+  @Column({ name: 'is_completed', default: false })
   isCompleted: boolean;
 
   @Column({ default: 1 })
@@ -42,11 +43,13 @@ export class Milestone {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.milestones, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => AcademicTerm, (academicTerm) => academicTerm.milestones, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'academic_term_id' })
   academicTerm: AcademicTerm;
 
   @OneToMany(() => Transaction, (transaction) => transaction.milestone)

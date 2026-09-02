@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -37,6 +38,7 @@ export class AcademicTerm {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.academicTerms, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @OneToMany(() => Budget, (budget) => budget.academicTerm)
