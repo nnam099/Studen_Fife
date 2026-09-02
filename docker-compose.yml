@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: student-finance-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: student_user
+      POSTGRES_PASSWORD: student_password
+      POSTGRES_DB: student_finance
+    ports:
+      - "55432:5432"
+    volumes:
+      - student_finance_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U student_user -d student_finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  student_finance_postgres_data:
