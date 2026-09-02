@@ -16,6 +16,7 @@ import com.sosinhvien.app.data.network.compose.CreateMilestoneRequest
 import com.sosinhvien.app.data.network.compose.CreateTransactionRequest
 import com.sosinhvien.app.data.network.compose.MilestoneResponse
 import com.sosinhvien.app.data.network.compose.TransactionResponse
+import com.sosinhvien.app.data.network.compose.UpdateBudgetRequest
 
 class AuthRepository(
     private val tokenStore: TokenStore,
@@ -41,6 +42,8 @@ class AuthRepository(
     suspend fun createCategory(name: String) = api.createCategory(CreateCategoryRequest(name))
     suspend fun budgets(): List<BudgetResponse> = api.budgets()
     suspend fun createBudget(request: CreateBudgetRequest) = api.createBudget(request)
+    suspend fun updateBudget(id: String, amount: Double, periodType: String) =
+        api.updateBudget(id, UpdateBudgetRequest(amount, periodType))
     suspend fun transactions(): List<TransactionResponse> = api.transactions()
     suspend fun createTransaction(request: CreateTransactionRequest) = api.createTransaction(request)
     suspend fun milestones(): List<MilestoneResponse> = api.milestones()

@@ -39,6 +39,9 @@ interface AuthApi {
     @POST("budgets")
     suspend fun createBudget(request: CreateBudgetRequest): BudgetResponse
 
+    @PATCH("budgets/{id}")
+    suspend fun updateBudget(@Path("id") id: String, request: UpdateBudgetRequest): BudgetResponse
+
     @GET("transactions")
     suspend fun transactions(): List<TransactionResponse>
 
@@ -93,6 +96,7 @@ data class CreateBudgetRequest(
     val categoryId: String,
 )
 data class BudgetResponse(val id: String, val amount: String, val periodType: String, val currency: String)
+data class UpdateBudgetRequest(val amount: Double? = null, val periodType: String? = null)
 data class CreateTransactionRequest(
     val amount: Double,
     val type: String,

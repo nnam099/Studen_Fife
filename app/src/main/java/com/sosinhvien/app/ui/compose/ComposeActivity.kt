@@ -80,11 +80,11 @@ private fun StudentFinanceApp() {
                 },
             )
         }
-        composable(Routes.ONBOARDING) { PlaceholderScreen(navController, "Onboarding") }
+        composable(Routes.ONBOARDING) { AcademicTermScreen(repository, navController) }
         composable(Routes.HOME) { HomeScreen(repository, navController) }
-        composable(Routes.ADD_EXPENSE) { PlaceholderScreen(navController, "Thêm chi tiêu") }
-        composable(Routes.BUDGET) { PlaceholderScreen(navController, "Ngân sách") }
-        composable(Routes.DEADLINE) { PlaceholderScreen(navController, "Deadline") }
+        composable(Routes.ADD_EXPENSE) { TransactionScreen(repository, navController) }
+        composable(Routes.BUDGET) { BudgetScreen(repository, navController) }
+        composable(Routes.DEADLINE) { MilestoneScreen(repository, navController) }
         composable(Routes.REPORT) { PlaceholderScreen(navController, "Báo cáo") }
         composable(Routes.SETTINGS) { PlaceholderScreen(navController, "Cài đặt") }
     }
