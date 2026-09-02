@@ -24,6 +24,7 @@ public class AuthModels {
     }
 
     public static class AuthResponse {
+        public String userId;
         public String token;
         public String email;
         public String displayName;

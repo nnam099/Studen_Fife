@@ -47,6 +47,11 @@ public class RegisterFragment extends Fragment {
                 return;
             }
 
+            if (!password.matches(".*[a-zA-Z].*") || !password.matches(".*[0-9].*")) {
+                Toast.makeText(requireContext(), "Mật khẩu phải gồm cả chữ và số", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (!password.equals(confirm)) {
                 Toast.makeText(requireContext(), "Xác nhận mật khẩu không khớp", Toast.LENGTH_SHORT).show();
                 return;
@@ -66,10 +71,12 @@ public class RegisterFragment extends Fragment {
                             if (response.isSuccessful() && response.body() != null) {
                                 com.sosinhvien.app.data.network.model.AuthModels.AuthResponse authRes = response.body();
                                 SessionManager session = new SessionManager(requireContext());
-                                session.login(authRes.email, authRes.displayName, authRes.token);
+                                session.login(authRes.userId, authRes.email, authRes.displayName, authRes.token);
 
                                 // Save user profile locally
-                                com.sosinhvien.app.data.MockDataRepository.getInstance().saveUserLocally(authRes.email, authRes.displayName);
+                                com.sosinhvien.app.data.MockDataRepository.getInstance().executeAsync(() -> {
+                                    com.sosinhvien.app.data.MockDataRepository.getInstance().saveUserLocally(authRes.email, authRes.displayName);
+                                });
 
                                 // Trigger initial background sync
                                 com.sosinhvien.app.data.sync.SyncManager.getInstance(requireContext()).triggerSync(null);
@@ -97,16 +104,22 @@ public class RegisterFragment extends Fragment {
                             btnRegister.setEnabled(true);
 
                             // 2. Fallback to Local Registration
-                            if (com.sosinhvien.app.data.MockDataRepository.getInstance().registerUser(email, password, name)) {
-                                SessionManager session = new SessionManager(requireContext());
-                                session.login(email, name, ""); // local token is empty
+                            com.sosinhvien.app.data.MockDataRepository.getInstance().executeAsync(() -> {
+                                boolean isRegistered = com.sosinhvien.app.data.MockDataRepository.getInstance().registerUser(email, password, name);
+                                String userId = com.sosinhvien.app.data.MockDataRepository.getInstance().getUserIdByEmail(email);
+                                com.sosinhvien.app.data.MockDataRepository.getInstance().runOnMainThread(() -> {
+                                    if (isRegistered) {
+                                        SessionManager session = new SessionManager(requireContext());
+                                        session.login(userId, email, name, ""); // local token is empty
 
-                                Toast.makeText(requireContext(), "Đăng ký ngoại tuyến thành công!", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(requireContext(), OnboardingActivity.class));
-                                requireActivity().finish();
-                            } else {
-                                Toast.makeText(requireContext(), "Đăng ký thất bại: Không kết nối máy chủ hoặc email đã tồn tại ngoại tuyến.", Toast.LENGTH_LONG).show();
-                            }
+                                        Toast.makeText(requireContext(), "Đăng ký ngoại tuyến thành công!", Toast.LENGTH_SHORT).show();
+                                        startActivity(new Intent(requireContext(), OnboardingActivity.class));
+                                        requireActivity().finish();
+                                    } else {
+                                        Toast.makeText(requireContext(), "Đăng ký thất bại: Không kết nối máy chủ hoặc email đã tồn tại ngoại tuyến.", Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                            });
                         }
                     });
         });

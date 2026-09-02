@@ -15,12 +15,12 @@ public interface NotificationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertNotification(NotificationLogEntity log);
 
-    @Query("SELECT * FROM notification_logs WHERE user_email = :email ORDER BY timestamp DESC")
-    List<NotificationLogEntity> getNotifications(String email);
+    @Query("SELECT * FROM notification_logs WHERE user_id = :userId ORDER BY timestamp DESC")
+    List<NotificationLogEntity> getNotifications(String userId);
 
     @Query("UPDATE notification_logs SET is_read = 1 WHERE id = :id")
     void markAsRead(String id);
 
-    @Query("SELECT COUNT(*) FROM notification_logs WHERE user_email = :email AND is_read = 0")
-    int getUnreadCount(String email);
+    @Query("SELECT COUNT(*) FROM notification_logs WHERE user_id = :userId AND is_read = 0")
+    int getUnreadCount(String userId);
 }

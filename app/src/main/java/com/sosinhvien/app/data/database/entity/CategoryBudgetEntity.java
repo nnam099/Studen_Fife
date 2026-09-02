@@ -9,18 +9,22 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "category_budgets",
-    primaryKeys = {"month_label", "category_id", "user_email"},
+    primaryKeys = {"month_label", "category_id", "user_id"},
+    indices = {
+        @androidx.room.Index(value = {"month_label", "user_id"}),
+        @androidx.room.Index(value = {"category_id", "user_id"})
+    },
     foreignKeys = {
         @ForeignKey(
             entity = BudgetEntity.class,
-            parentColumns = {"month_label", "user_email"},
-            childColumns = {"month_label", "user_email"},
+            parentColumns = {"month_label", "user_id"},
+            childColumns = {"month_label", "user_id"},
             onDelete = ForeignKey.CASCADE
         ),
         @ForeignKey(
             entity = CategoryEntity.class,
-            parentColumns = {"id", "user_email"},
-            childColumns = {"category_id", "user_email"},
+            parentColumns = {"id", "user_id"},
+            childColumns = {"category_id", "user_id"},
             onDelete = ForeignKey.CASCADE
         )
     }
@@ -36,10 +40,10 @@ public class CategoryBudgetEntity {
     @SerializedName("category_id")
     public String categoryId;
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @SerializedName("amount")
     public long amount;
@@ -55,10 +59,10 @@ public class CategoryBudgetEntity {
     @SerializedName("is_deleted")
     public int isDeleted = 0;
 
-    public CategoryBudgetEntity(@NonNull String monthLabel, @NonNull String categoryId, @NonNull String userEmail, long amount) {
+    public CategoryBudgetEntity(@NonNull String monthLabel, @NonNull String categoryId, @NonNull String userId, long amount) {
         this.monthLabel = monthLabel;
         this.categoryId = categoryId;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.amount = amount;
     }
 }

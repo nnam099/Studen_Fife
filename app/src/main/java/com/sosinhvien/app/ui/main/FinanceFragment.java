@@ -55,8 +55,26 @@ public class FinanceFragment extends Fragment {
 
     private void applyFilter(String filter) {
         currentFilter = filter;
-        adapter = new TransactionAdapter(MockDataRepository.getInstance().getTransactionsFiltered(filter));
-        binding.recyclerTransactions.setAdapter(adapter);
+        MockDataRepository.getInstance().executeAsync(() -> {
+            java.util.List<com.sosinhvien.app.data.model.Transaction> transactions = MockDataRepository.getInstance().getTransactionsFiltered(filter);
+            MockDataRepository.getInstance().runOnMainThread(() -> {
+                if (binding == null) return;
+                adapter = new TransactionAdapter(transactions);
+                binding.recyclerTransactions.setAdapter(adapter);
+                
+                if (transactions.isEmpty()) {
+                    binding.recyclerTransactions.setVisibility(View.GONE);
+                    if (binding.layoutEmptyTransactions != null) {
+                        binding.layoutEmptyTransactions.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    binding.recyclerTransactions.setVisibility(View.VISIBLE);
+                    if (binding.layoutEmptyTransactions != null) {
+                        binding.layoutEmptyTransactions.setVisibility(View.GONE);
+                    }
+                }
+            });
+        });
     }
 
     @Override
@@ -74,18 +92,44 @@ public class FinanceFragment extends Fragment {
     private void refreshData() {
         if (binding == null) return;
         MockDataRepository repo = MockDataRepository.getInstance();
-        Budget budget = repo.getCurrentBudget();
 
-        binding.textRemaining.setText(CurrencyFormatter.format(budget.getRemaining()));
-        binding.textBudgetSub.setText("Còn lại của " + CurrencyFormatter.format(budget.getTotalBudget()));
-        binding.textSpent.setText("Đã chi " + CurrencyFormatter.format(budget.getSpent())
-                + " • " + budget.getUsagePercent() + "%");
-        binding.progressBudget.setProgress(budget.getUsagePercent());
-        binding.progressBudget.setIndicatorColor(ContextCompat.getColor(requireContext(),
-                budget.getUsagePercent() >= 100 ? R.color.danger
-                        : budget.getUsagePercent() >= 80 ? R.color.warning : R.color.primary_container));
+        repo.executeAsync(() -> {
+            Budget budget = repo.getCurrentBudget();
+            java.util.List<com.sosinhvien.app.data.model.Transaction> transactions = repo.getTransactionsFiltered(currentFilter);
 
-        adapter = new TransactionAdapter(repo.getTransactionsFiltered(currentFilter));
-        binding.recyclerTransactions.setAdapter(adapter);
+            repo.runOnMainThread(() -> {
+                if (binding == null) return;
+                if (budget != null) {
+                    binding.textRemaining.setText(CurrencyFormatter.format(budget.getRemaining()));
+                    binding.textBudgetSub.setText("Còn lại của " + CurrencyFormatter.format(budget.getTotalBudget()));
+                    binding.textSpent.setText("Đã chi " + CurrencyFormatter.format(budget.getSpent())
+                            + " • " + budget.getUsagePercent() + "%");
+                    binding.progressBudget.setProgress(Math.min(budget.getUsagePercent(), 100));
+                    binding.progressBudget.setIndicatorColor(ContextCompat.getColor(requireContext(),
+                            budget.getUsagePercent() >= 100 ? R.color.danger
+                                    : budget.getUsagePercent() >= 80 ? R.color.warning : R.color.primary_container));
+                } else {
+                    binding.textRemaining.setText("Chưa thiết lập");
+                    binding.textBudgetSub.setText("Hãy tạo ngân sách cho tháng này");
+                    binding.textSpent.setText("—");
+                    binding.progressBudget.setProgress(0);
+                }
+
+                adapter = new TransactionAdapter(transactions);
+                binding.recyclerTransactions.setAdapter(adapter);
+                
+                if (transactions.isEmpty()) {
+                    binding.recyclerTransactions.setVisibility(View.GONE);
+                    if (binding.layoutEmptyTransactions != null) {
+                        binding.layoutEmptyTransactions.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    binding.recyclerTransactions.setVisibility(View.VISIBLE);
+                    if (binding.layoutEmptyTransactions != null) {
+                        binding.layoutEmptyTransactions.setVisibility(View.GONE);
+                    }
+                }
+            });
+        });
     }
 }

@@ -34,7 +34,24 @@ public class HomeFragment extends Fragment {
 
         binding.recyclerReminders.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        binding.textUpcomingEvent.setText("14:00 - 16:30 • Học Thể chất - Sân B2");
+        // Setup dynamic upcoming event
+        MockDataRepository.getInstance().executeAsync(() -> {
+            java.util.List<com.sosinhvien.app.data.model.CalendarEvent> events = MockDataRepository.getInstance().getTodayEvents();
+            MockDataRepository.getInstance().runOnMainThread(() -> {
+                if (binding == null) return;
+                boolean found = false;
+                for (com.sosinhvien.app.data.model.CalendarEvent e : events) {
+                    if (!e.isCompleted()) {
+                        binding.textUpcomingEvent.setText(e.getTimeRange() + " • " + e.getTitle());
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    binding.textUpcomingEvent.setText("Không có sự kiện sắp tới");
+                }
+            });
+        });
 
         binding.btnAddExpense.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), AddTransactionActivity.class)
@@ -42,6 +59,17 @@ public class HomeFragment extends Fragment {
         binding.btnAddIncome.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), AddTransactionActivity.class)
                         .putExtra(AddTransactionActivity.EXTRA_TYPE, Transaction.TYPE_INCOME)));
+                        
+        if (binding.chartSparkline != null) {
+            binding.chartSparkline.getDescription().setEnabled(false);
+            binding.chartSparkline.getLegend().setEnabled(false);
+            binding.chartSparkline.getXAxis().setEnabled(false);
+            binding.chartSparkline.getAxisLeft().setEnabled(false);
+            binding.chartSparkline.getAxisRight().setEnabled(false);
+            binding.chartSparkline.setTouchEnabled(false);
+            binding.chartSparkline.setNoDataText("Chưa có dữ liệu chi tiêu 7 ngày");
+            binding.chartSparkline.setNoDataTextColor(ContextCompat.getColor(requireContext(), R.color.on_primary));
+        }
 
         return binding.getRoot();
     }
@@ -62,19 +90,61 @@ public class HomeFragment extends Fragment {
         if (binding == null) return;
         SessionManager session = new SessionManager(requireContext());
         MockDataRepository repo = MockDataRepository.getInstance();
-        Budget budget = repo.getCurrentBudget();
 
-        binding.textGreeting.setText("Chào bạn, " + session.getDisplayName() + "!");
-        binding.textMonth.setText(budget.getMonthLabel());
-        binding.textBalance.setText(CurrencyFormatter.format(budget.getAvailableBalance()));
+        repo.executeAsync(() -> {
+            Budget budget = repo.getCurrentBudget();
+            java.util.List<com.sosinhvien.app.data.model.Reminder> reminders = repo.getTodayReminders();
+            String monthLabel = repo.getCurrentMonthLabel();
 
-        int percent = budget.getUsagePercent();
-        binding.textBudgetPercent.setText(percent + "%");
-        binding.textBudgetPercent.setTextColor(ContextCompat.getColor(requireContext(),
-                percent >= 100 ? R.color.danger : percent >= 80 ? R.color.warning : R.color.success));
-        binding.textBudgetDetail.setText("Đã chi " + CurrencyFormatter.formatShort(budget.getSpent())
-                + " / " + CurrencyFormatter.formatShort(budget.getTotalBudget()));
+            repo.runOnMainThread(() -> {
+                if (binding == null) return;
+                binding.textGreeting.setText("Chào bạn, " + session.getDisplayName() + "!");
 
-        binding.recyclerReminders.setAdapter(new ReminderAdapter(repo.getTodayReminders()));
+                if (budget != null) {
+                    binding.textMonth.setText(budget.getMonthLabel());
+                    binding.textBalance.setText(CurrencyFormatter.format(budget.getAvailableBalance()));
+
+                    int percent = budget.getUsagePercent();
+                    binding.textBudgetPercent.setText(percent + "%");
+                    binding.textBudgetPercent.setTextColor(ContextCompat.getColor(requireContext(),
+                            percent >= 100 ? R.color.danger : percent >= 80 ? R.color.warning : R.color.success));
+                            
+                    // Cập nhật CircularProgressIndicator
+                    if (binding.progressBudget != null) {
+                        binding.progressBudget.setProgress(Math.min(percent, 100));
+                        binding.progressBudget.setIndicatorColor(ContextCompat.getColor(requireContext(),
+                            percent >= 100 ? R.color.danger : percent >= 80 ? R.color.warning : R.color.primary));
+                    }
+                    
+                    binding.textBudgetDetail.setText("Đã chi " + CurrencyFormatter.formatShort(budget.getSpent())
+                            + " / " + CurrencyFormatter.formatShort(budget.getTotalBudget()));
+                } else {
+                    binding.textMonth.setText(monthLabel);
+                    binding.textBalance.setText("Chưa thiết lập");
+                    binding.textBudgetPercent.setText("—");
+                    binding.textBudgetPercent.setTextColor(ContextCompat.getColor(requireContext(), R.color.on_surface_subtle));
+                    
+                    if (binding.progressBudget != null) {
+                        binding.progressBudget.setProgress(0);
+                    }
+                    
+                    binding.textBudgetDetail.setText("Hãy thiết lập ngân sách tháng này");
+                }
+
+                // Xử lý Empty State cho Nhắc nhở
+                if (reminders.isEmpty()) {
+                    binding.recyclerReminders.setVisibility(View.GONE);
+                    if (binding.layoutEmptyReminders != null) {
+                        binding.layoutEmptyReminders.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    binding.recyclerReminders.setVisibility(View.VISIBLE);
+                    if (binding.layoutEmptyReminders != null) {
+                        binding.layoutEmptyReminders.setVisibility(View.GONE);
+                    }
+                    binding.recyclerReminders.setAdapter(new ReminderAdapter(reminders));
+                }
+            });
+        });
     }
 }

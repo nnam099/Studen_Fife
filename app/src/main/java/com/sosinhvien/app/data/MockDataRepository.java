@@ -23,18 +23,39 @@ import com.sosinhvien.app.data.model.User;
 import com.sosinhvien.app.util.SessionManager;
 
 import java.security.MessageDigest;
+import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public final class MockDataRepository {
 
     private static MockDataRepository instance;
+
+    public interface DataCallback<T> { void onDataLoaded(T data); }
+    public interface ActionCallback { void onComplete(); }
+    public interface ActionCallbackBool { void onComplete(boolean success); }
+
+    private final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(4);
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+    public void executeAsync(Runnable backgroundTask) {
+        executor.execute(backgroundTask);
+    }
+
+    public void runOnMainThread(Runnable mainThreadTask) {
+        mainHandler.post(mainThreadTask);
+    }
 
     private final AppDatabase db;
     private final Context context;
@@ -42,7 +63,7 @@ public final class MockDataRepository {
     private MockDataRepository(Context context) {
         this.context = context.getApplicationContext();
         this.db = AppDatabase.getInstance(this.context);
-        prePopulateIfNeeded();
+        executor.execute(this::prePopulateIfNeeded);
     }
 
     public static synchronized void initialize(Context context) {
@@ -58,11 +79,11 @@ public final class MockDataRepository {
         return instance;
     }
 
-    public String getCurrentUserEmail() {
+    public String getCurrentUserId() {
         if (context != null) {
-            return new SessionManager(context).getEmail();
+            return new SessionManager(context).getUserId();
         }
-        return "demo@truong.edu.vn";
+        return "default_user_id";
     }
 
     public String getCurrentMonthLabel() {
@@ -71,12 +92,12 @@ public final class MockDataRepository {
     }
 
     public User getCurrentUser() {
-        String email = getCurrentUserEmail();
-        UserEntity entity = db.userDao().getUserByEmail(email);
+        String userId = getCurrentUserId();
+        UserEntity entity = db.userDao().getUserById(userId);
         if (entity != null) {
             return new User(entity.email, entity.displayName);
         }
-        return new User(email, "Sinh viên");
+        return new User("unknown@example.com", "Sinh viên");
     }
 
     public String getUserDisplayName(String email) {
@@ -84,30 +105,42 @@ public final class MockDataRepository {
         return entity != null ? entity.displayName : "Sinh viên";
     }
 
+    public String getUserIdByEmail(String email) {
+        UserEntity entity = db.userDao().getUserByEmail(email);
+        return entity != null ? entity.id : "default_user_id";
+    }
+
     public Budget getCurrentBudget() {
-        String email = getCurrentUserEmail();
+        String userId = getCurrentUserId();
         String monthLabel = getCurrentMonthLabel();
-        BudgetEntity entity = db.financeDao().getBudget(email, monthLabel);
+        BudgetEntity entity = db.financeDao().getBudget(userId, monthLabel);
         if (entity == null) {
-            // Create a default if not found
-            entity = new BudgetEntity(monthLabel, email, 6_500_000, 2_000_000);
-            db.financeDao().insertBudget(entity);
+            return null;
         }
         
         long[] range = getMonthRange(monthLabel);
-        long spent = db.financeDao().sumSpentByMonth(email, range[0], range[1]);
+        long maxTime = Math.min(range[1], System.currentTimeMillis());
+        long spent = db.financeDao().sumSpentByMonth(userId, range[0], maxTime);
+        long income = db.financeDao().sumIncomeByMonth(userId, range[0], maxTime);
         
-        return new Budget(entity.monthLabel, entity.totalBudget, entity.openingBalance, spent);
+        return new Budget(entity.monthLabel, entity.totalBudget, entity.openingBalance, spent, income);
+    }
+
+    public boolean hasBudget() {
+        String userId = getCurrentUserId();
+        String monthLabel = getCurrentMonthLabel();
+        return db.financeDao().getBudget(userId, monthLabel) != null;
     }
 
     public void saveBudget(long totalBudget, long openingBalance) {
-        String email = getCurrentUserEmail();
+        String userId = getCurrentUserId();
         String monthLabel = getCurrentMonthLabel();
-        BudgetEntity entity = new BudgetEntity(monthLabel, email, totalBudget, openingBalance);
+        
+        BudgetEntity entity = new BudgetEntity(monthLabel, userId, totalBudget, openingBalance);
         db.financeDao().insertBudget(entity);
         
         // Reset warnings since budget changed
-        BudgetWarningEntity warning = db.financeDao().getWarningFlag(email, monthLabel, "total");
+        BudgetWarningEntity warning = db.financeDao().getWarningFlag(userId, monthLabel, "total");
         if (warning != null) {
             warning.alerted80 = false;
             warning.alerted100 = false;
@@ -116,8 +149,8 @@ public final class MockDataRepository {
     }
 
     public List<Category> getCategories() {
-        String email = getCurrentUserEmail();
-        List<CategoryEntity> entities = db.financeDao().getVisibleCategories(email);
+        String userId = getCurrentUserId();
+        List<CategoryEntity> entities = db.financeDao().getVisibleCategories(userId);
         List<Category> list = new ArrayList<>();
         for (CategoryEntity entity : entities) {
             list.add(new Category(entity.id, entity.name, entity.iconName, entity.isDefault, entity.visible));
@@ -126,60 +159,117 @@ public final class MockDataRepository {
     }
 
     public Category getCategoryById(String id) {
-        String email = getCurrentUserEmail();
-        CategoryEntity entity = db.financeDao().getCategoryById(email, id);
+        String userId = getCurrentUserId();
+        CategoryEntity entity = db.financeDao().getCategoryById(userId, id);
         if (entity != null) {
             return new Category(entity.id, entity.name, entity.iconName, entity.isDefault, entity.visible);
         }
         return new Category("other", "Khác", "more_horiz", true, true);
     }
 
+    public List<Category> getAllCategories() {
+        String userId = getCurrentUserId();
+        List<CategoryEntity> entities = db.financeDao().getAllCategories(userId);
+        List<Category> list = new ArrayList<>();
+        for (CategoryEntity entity : entities) {
+            list.add(new Category(entity.id, entity.name, entity.iconName, entity.isDefault, entity.visible));
+        }
+        return list;
+    }
+
+    public boolean addCategory(String name) {
+        String userId = getCurrentUserId();
+        String stdName = standardizeProductName(name);
+        List<CategoryEntity> all = db.financeDao().getAllCategories(userId);
+        for (CategoryEntity cat : all) {
+            if (standardizeProductName(cat.name).equals(stdName)) {
+                return false; // Duplicate after standardization
+            }
+        }
+        String id = UUID.randomUUID().toString();
+        db.financeDao().insertCategory(new CategoryEntity(id, userId, name.trim(), "label", false, true));
+        return true;
+    }
+
+    public boolean renameCategory(String categoryId, String newName) {
+        String userId = getCurrentUserId();
+        String stdName = standardizeProductName(newName);
+        List<CategoryEntity> all = db.financeDao().getAllCategories(userId);
+        for (CategoryEntity cat : all) {
+            if (!cat.id.equals(categoryId) && standardizeProductName(cat.name).equals(stdName)) {
+                return false; // Duplicate
+            }
+        }
+        CategoryEntity entity = db.financeDao().getCategoryById(userId, categoryId);
+        if (entity != null) {
+            entity.name = newName.trim();
+            db.financeDao().updateCategory(entity);
+            return true;
+        }
+        return false;
+    }
+
+    public void hideCategory(String categoryId) {
+        String userId = getCurrentUserId();
+        CategoryEntity entity = db.financeDao().getCategoryById(userId, categoryId);
+        if (entity != null) {
+            entity.visible = false;
+            db.financeDao().updateCategory(entity);
+        }
+    }
+
     public List<Transaction> getTransactions() {
-        String email = getCurrentUserEmail();
-        List<TransactionEntity> entities = db.financeDao().getActiveTransactions(email);
+        String userId = getCurrentUserId();
+        List<TransactionEntity> entities = db.financeDao().getActiveTransactions(userId);
         List<Transaction> list = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
         for (TransactionEntity entity : entities) {
+            String timeLabel = sdf.format(new Date(entity.timestamp));
             list.add(new Transaction(entity.id, entity.name, entity.categoryId, entity.amount,
-                    entity.type, entity.source, entity.timeLabel));
+                    entity.type, entity.source, timeLabel));
         }
         return list;
     }
 
     public List<Transaction> getTransactionsFiltered(String filter) {
-        String email = getCurrentUserEmail();
+        String userId = getCurrentUserId();
         List<TransactionEntity> entities;
         if ("Thu".equals(filter)) {
-            entities = db.financeDao().getActiveTransactionsByType(email, "income");
+            entities = db.financeDao().getActiveTransactionsByType(userId, "income");
         } else if ("Chi".equals(filter)) {
-            entities = db.financeDao().getActiveTransactionsByType(email, "expense");
+            entities = db.financeDao().getActiveTransactionsByType(userId, "expense");
         } else {
-            entities = db.financeDao().getActiveTransactions(email);
+            entities = db.financeDao().getActiveTransactions(userId);
         }
         List<Transaction> list = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
         for (TransactionEntity entity : entities) {
+            String timeLabel = sdf.format(new Date(entity.timestamp));
             list.add(new Transaction(entity.id, entity.name, entity.categoryId, entity.amount,
-                    entity.type, entity.source, entity.timeLabel));
+                    entity.type, entity.source, timeLabel));
         }
         return list;
     }
 
     public void addTransaction(String name, String categoryId, long amount, String type, String source) {
-        String email = getCurrentUserEmail();
+        String userId = getCurrentUserId();
         String id = UUID.randomUUID().toString();
         long timestamp = System.currentTimeMillis();
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        String timeLabel = sdf.format(new Date());
 
-        TransactionEntity transaction = new TransactionEntity(id, email, name, categoryId, amount, type, source, timestamp, timeLabel, "", false);
+        TransactionEntity transaction = new TransactionEntity(id, userId, name, categoryId, amount, type, source, timestamp, "", false);
         db.financeDao().insertTransaction(transaction);
+        
+        com.sosinhvien.app.data.database.entity.AuditLogEntity audit = new com.sosinhvien.app.data.database.entity.AuditLogEntity(
+                UUID.randomUUID().toString(), id, userId, "INSERT", amount, timestamp);
+        db.financeDao().insertAuditLog(audit);
 
         // Check budget warnings
-        checkBudgetThresholds(email, categoryId, amount, type);
+        checkBudgetThresholds(userId, categoryId, amount, type);
     }
 
     public List<Reminder> getTodayReminders() {
-        String email = getCurrentUserEmail();
-        List<NotificationLogEntity> entities = db.notificationDao().getNotifications(email);
+        String userId = getCurrentUserId();
+        List<NotificationLogEntity> entities = db.notificationDao().getNotifications(userId);
         List<Reminder> list = new ArrayList<>();
         for (NotificationLogEntity entity : entities) {
             list.add(new Reminder(entity.title, entity.subtitle, entity.accentColor));
@@ -188,15 +278,42 @@ public final class MockDataRepository {
     }
 
     public List<CalendarEvent> getTodayEvents() {
-        String email = getCurrentUserEmail();
-        List<CalendarEventEntity> entities = db.timeDao().getEventsInRange(email, 0, Long.MAX_VALUE);
+        String userId = getCurrentUserId();
+        List<CalendarEventEntity> entities = db.timeDao().getEventsInRange(userId, 0, Long.MAX_VALUE);
         List<CalendarEvent> list = new ArrayList<>();
         for (CalendarEventEntity entity : entities) {
             String timeRange = formatTimeRange(entity.startTime, entity.endTime, entity.type);
             boolean completed = "Đã hoàn thành".equals(entity.sessionStatus);
-            list.add(new CalendarEvent(entity.id, entity.title, timeRange, entity.type, entity.priority, completed));
+            boolean overdue = false;
+            if (CalendarEvent.TYPE_TASK.equals(entity.type) && entity.taskId != null) {
+                com.sosinhvien.app.data.database.entity.TaskEntity task = db.timeDao().getTaskById(entity.taskId);
+                if (task != null) {
+                    overdue = task.isOverdue();
+                }
+            }
+            list.add(new CalendarEvent(entity.id, entity.title, timeRange, entity.type, entity.priority, completed, overdue));
         }
         return list;
+    }
+
+    public void importSystemEvents(List<CalendarEventEntity> importedEvents) {
+        if (importedEvents == null || importedEvents.isEmpty()) return;
+        String userId = getCurrentUserId();
+        
+        for (CalendarEventEntity event : importedEvents) {
+            // Check for duplicates by title and start time
+            List<CalendarEventEntity> existing = db.timeDao().getEventsInRange(userId, event.startTime, event.endTime);
+            boolean isDuplicate = false;
+            for (CalendarEventEntity e : existing) {
+                if (e.title != null && e.title.equals(event.title) && e.startTime == event.startTime) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (!isDuplicate) {
+                db.timeDao().insertEvent(event);
+            }
+        }
     }
 
     public List<ChatMessage> getInitialChatMessages() {
@@ -260,34 +377,35 @@ public final class MockDataRepository {
             return false;
         }
         String hash = hashPassword(password);
-        UserEntity user = new UserEntity(email, hash, displayName);
+        String userId = UUID.randomUUID().toString();
+        UserEntity user = new UserEntity(userId, email, hash, displayName);
         db.userDao().insertUser(user);
 
         // Create default configurations
         UserConfigEntity config = new UserConfigEntity(
-                email, "23:00", "07:00", 15, 30, 90,
+                userId, "23:00", "07:00", 15, 30, 90,
                 "Đọc sách, Thể thao", "Học tốt học kỳ này", "", "",
                 true, "24,3", 15, "21:00", true
         );
         db.userDao().insertConfig(config);
 
         // Create default categories
-        db.financeDao().insertCategory(new CategoryEntity("food", email, "Ăn uống", "restaurant", true, true));
-        db.financeDao().insertCategory(new CategoryEntity("transport", email, "Di chuyển", "directions_car", true, true));
-        db.financeDao().insertCategory(new CategoryEntity("study", email, "Học tập", "school", true, true));
-        db.financeDao().insertCategory(new CategoryEntity("entertainment", email, "Giải trí", "movie", true, true));
-        db.financeDao().insertCategory(new CategoryEntity("other", email, "Khác", "more_horiz", true, true));
+        db.financeDao().insertCategory(new CategoryEntity("food", userId, "Ăn uống", "restaurant", true, true));
+        db.financeDao().insertCategory(new CategoryEntity("transport", userId, "Di chuyển", "directions_car", true, true));
+        db.financeDao().insertCategory(new CategoryEntity("study", userId, "Học tập", "school", true, true));
+        db.financeDao().insertCategory(new CategoryEntity("entertainment", userId, "Giải trí", "movie", true, true));
+        db.financeDao().insertCategory(new CategoryEntity("other", userId, "Khác", "more_horiz", true, true));
 
         // Create default budget
         String monthLabel = getCurrentMonthLabel();
-        BudgetEntity budget = new BudgetEntity(monthLabel, email, 6_500_000, 2_000_000);
+        BudgetEntity budget = new BudgetEntity(monthLabel, userId, 6_500_000, 2_000_000);
         db.financeDao().insertBudget(budget);
 
         // Create default category budgets
-        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "food", email, 2_000_000));
-        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "transport", email, 500_000));
-        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "study", email, 1_000_000));
-        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "entertainment", email, 1_000_000));
+        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "food", userId, 2_000_000));
+        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "transport", userId, 500_000));
+        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "study", userId, 1_000_000));
+        db.financeDao().insertCategoryBudget(new CategoryBudgetEntity(monthLabel, "entertainment", userId, 1_000_000));
 
         return true;
     }
@@ -295,24 +413,26 @@ public final class MockDataRepository {
     public void saveUserLocally(String email, String displayName) {
         UserEntity existing = db.userDao().getUserByEmail(email);
         if (existing == null) {
-            UserEntity user = new UserEntity(email, "", displayName);
+            String userId = UUID.randomUUID().toString();
+            UserEntity user = new UserEntity(userId, email, "", displayName);
             db.userDao().insertUser(user);
         }
     }
 
-    private void checkBudgetThresholds(String email, String categoryId, long amount, String type) {
+    private void checkBudgetThresholds(String userId, String categoryId, long amount, String type) {
         if (!"expense".equals(type)) return;
         String monthLabel = getCurrentMonthLabel();
-        BudgetEntity budget = db.financeDao().getBudget(email, monthLabel);
+        BudgetEntity budget = db.financeDao().getBudget(userId, monthLabel);
         if (budget == null) return;
 
         long[] range = getMonthRange(monthLabel);
-        long totalSpent = db.financeDao().sumSpentByMonth(email, range[0], range[1]);
+        long maxTime = Math.min(range[1], System.currentTimeMillis());
+        long totalSpent = db.financeDao().sumSpentByMonth(userId, range[0], maxTime);
 
-        checkAndRaiseWarning(email, "total", monthLabel, totalSpent, budget.totalBudget, "Ngân sách tổng");
+        checkAndRaiseWarning(userId, "total", monthLabel, totalSpent, budget.totalBudget, "Ngân sách tổng");
 
         if (categoryId != null) {
-            List<CategoryBudgetEntity> cbList = db.financeDao().getCategoryBudgets(email, monthLabel);
+            List<CategoryBudgetEntity> cbList = db.financeDao().getCategoryBudgets(userId, monthLabel);
             CategoryBudgetEntity targetCb = null;
             for (CategoryBudgetEntity cb : cbList) {
                 if (cb.categoryId.equals(categoryId)) {
@@ -321,32 +441,42 @@ public final class MockDataRepository {
                 }
             }
             if (targetCb != null) {
-                long catSpent = db.financeDao().sumSpentByCategoryMonth(email, categoryId, range[0], range[1]);
-                CategoryEntity cat = db.financeDao().getCategoryById(email, categoryId);
+                long catSpent = db.financeDao().sumSpentByCategoryMonth(userId, categoryId, range[0], maxTime);
+                CategoryEntity cat = db.financeDao().getCategoryById(userId, categoryId);
                 String catName = cat != null ? cat.name : "Danh mục";
-                checkAndRaiseWarning(email, categoryId, monthLabel, catSpent, targetCb.amount, "Ngân sách " + catName);
+                checkAndRaiseWarning(userId, categoryId, monthLabel, catSpent, targetCb.amount, "Ngân sách " + catName);
             }
         }
     }
 
-    private void checkAndRaiseWarning(String email, String categoryId, String monthLabel, long spent, long limit, String name) {
+    private void checkAndRaiseWarning(String userId, String categoryId, String monthLabel, long spent, long limit, String name) {
         if (limit <= 0) return;
         double percent = (double) spent / limit;
 
-        BudgetWarningEntity flag = db.financeDao().getWarningFlag(email, monthLabel, categoryId);
+        BudgetWarningEntity flag = db.financeDao().getWarningFlag(userId, monthLabel, categoryId);
         if (flag == null) {
-            flag = new BudgetWarningEntity(monthLabel, categoryId, email, false, false);
+            flag = new BudgetWarningEntity(monthLabel, categoryId, userId, false, false);
         }
 
         boolean updated = false;
         long now = System.currentTimeMillis();
+
+        // Reset flags when ratio drops below threshold (mục 6.4)
+        if (percent < 0.8 && flag.alerted80) {
+            flag.alerted80 = false;
+            updated = true;
+        }
+        if (percent < 1.0 && flag.alerted100) {
+            flag.alerted100 = false;
+            updated = true;
+        }
 
         if (percent >= 1.0 && !flag.alerted100) {
             flag.alerted100 = true;
             updated = true;
             NotificationLogEntity notif = new NotificationLogEntity(
                     UUID.randomUUID().toString(),
-                    email,
+                    userId,
                     "Vượt hạn mức chi tiêu",
                     name + " đã vượt quá 100% hạn mức (Đã chi " + formatVnd(spent) + " / " + formatVnd(limit) + ")",
                     "budget_100",
@@ -361,7 +491,7 @@ public final class MockDataRepository {
             updated = true;
             NotificationLogEntity notif = new NotificationLogEntity(
                     UUID.randomUUID().toString(),
-                    email,
+                    userId,
                     "Cảnh báo hạn mức chi tiêu",
                     name + " đã tiêu dùng hơn 80% hạn mức (Đã chi " + formatVnd(spent) + " / " + formatVnd(limit) + ")",
                     "budget_80",
@@ -375,6 +505,28 @@ public final class MockDataRepository {
 
         if (updated) {
             db.financeDao().insertWarningFlag(flag);
+        }
+    }
+
+    // Re-evaluate all warning flags after transaction edit/delete (mục 6.4)
+    public void reEvaluateWarningFlags() {
+        String userId = getCurrentUserId();
+        String monthLabel = getCurrentMonthLabel();
+        BudgetEntity budget = db.financeDao().getBudget(userId, monthLabel);
+        if (budget == null) return;
+
+        long[] range = getMonthRange(monthLabel);
+        long maxTime = Math.min(range[1], System.currentTimeMillis());
+        long totalSpent = db.financeDao().sumSpentByMonth(userId, range[0], maxTime);
+
+        checkAndRaiseWarning(userId, "total", monthLabel, totalSpent, budget.totalBudget, "Ngân sách tổng");
+
+        List<CategoryBudgetEntity> cbList = db.financeDao().getCategoryBudgets(userId, monthLabel);
+        for (CategoryBudgetEntity cb : cbList) {
+            long catSpent = db.financeDao().sumSpentByCategoryMonth(userId, cb.categoryId, range[0], maxTime);
+            CategoryEntity cat = db.financeDao().getCategoryById(userId, cb.categoryId);
+            String catName = cat != null ? cat.name : "Danh mục";
+            checkAndRaiseWarning(userId, cb.categoryId, monthLabel, catSpent, cb.amount, "Ngân sách " + catName);
         }
     }
 
@@ -445,8 +597,10 @@ public final class MockDataRepository {
         UserEntity demo = db.userDao().getUserByEmail("demo@truong.edu.vn");
         if (demo == null) {
             registerUser("demo@truong.edu.vn", "demo1234", "Minh");
+            demo = db.userDao().getUserByEmail("demo@truong.edu.vn");
+            if (demo == null) return; // Should not happen
+            String userId = demo.id;
 
-            String email = "demo@truong.edu.vn";
             Calendar cal = Calendar.getInstance();
             int currentYear = cal.get(Calendar.YEAR);
             int currentMonth = cal.get(Calendar.MONTH);
@@ -455,7 +609,7 @@ public final class MockDataRepository {
             // Today, 12:30
             cal.set(currentYear, currentMonth, currentDay, 12, 30, 0);
             long t1Time = cal.getTimeInMillis();
-            db.financeDao().insertTransaction(new TransactionEntity("t1", email, "Cơm trưa", "food", 35000, "expense", "Thủ công", t1Time, "12:30", "Ăn trưa ở căng tin", false));
+            db.financeDao().insertTransaction(new TransactionEntity("t1", userId, "Cơm trưa", "food", 35000, "expense", "Thủ công", t1Time, "", false));
 
             // Yesterday, 10:00
             cal.set(currentYear, currentMonth, currentDay, 10, 0, 0);
@@ -463,17 +617,17 @@ public final class MockDataRepository {
             long t2Time = cal.getTimeInMillis();
             // Reset cal to today
             cal.setTimeInMillis(System.currentTimeMillis());
-            db.financeDao().insertTransaction(new TransactionEntity("t2", email, "Tiền tiêu vặt tháng 10", "other", 2000000, "income", "Thủ công", t2Time, "Hôm qua", "Bố mẹ gửi", false));
+            db.financeDao().insertTransaction(new TransactionEntity("t2", userId, "Tiền tiêu vặt tháng 10", "other", 2000000, "income", "Thủ công", t2Time, "", false));
 
             // Today, 08:00
             cal.set(currentYear, currentMonth, currentDay, 8, 0, 0);
             long t3Time = cal.getTimeInMillis();
-            db.financeDao().insertTransaction(new TransactionEntity("t3", email, "Grab", "transport", 20000, "expense", "OCR", t3Time, "08:00", "Đi học xe ôm", false));
+            db.financeDao().insertTransaction(new TransactionEntity("t3", userId, "Grab", "transport", 20000, "expense", "OCR", t3Time, "", false));
 
             // Today, 15:20
             cal.set(currentYear, currentMonth, currentDay, 15, 20, 0);
             long t4Time = cal.getTimeInMillis();
-            db.financeDao().insertTransaction(new TransactionEntity("t4", email, "Cà phê", "food", 45000, "expense", "Thủ công", t4Time, "15:20", "Uống cà phê học nhóm", false));
+            db.financeDao().insertTransaction(new TransactionEntity("t4", userId, "Cà phê", "food", 45000, "expense", "Thủ công", t4Time, "", false));
 
             // 2 days ago, 17:00
             cal.set(currentYear, currentMonth, currentDay, 17, 0, 0);
@@ -481,16 +635,16 @@ public final class MockDataRepository {
             long t5Time = cal.getTimeInMillis();
             // Reset cal to today
             cal.setTimeInMillis(System.currentTimeMillis());
-            db.financeDao().insertTransaction(new TransactionEntity("t5", email, "Part-time tuần 3", "other", 800000, "income", "Trợ lý", t5Time, "2 ngày trước", "Làm gia sư", false));
+            db.financeDao().insertTransaction(new TransactionEntity("t5", userId, "Part-time tuần 3", "other", 800000, "income", "Trợ lý", t5Time, "", false));
 
             // Today, 09:15
             cal.set(currentYear, currentMonth, currentDay, 9, 15, 0);
             long t6Time = cal.getTimeInMillis();
-            db.financeDao().insertTransaction(new TransactionEntity("t6", email, "Photocopy", "study", 12000, "expense", "Thủ công", t6Time, "09:15", "Tài liệu học tập", false));
+            db.financeDao().insertTransaction(new TransactionEntity("t6", userId, "Photocopy", "study", 12000, "expense", "Thủ công", t6Time, "", false));
 
             // Default task
             cal.set(currentYear, currentMonth, currentDay, 14, 0, 0);
-            db.timeDao().insertTask(new TaskEntity("task_java", email, "Nộp bài tập Java", cal.getTimeInMillis(), "Cao", 120, "Chưa thực hiện", null, false));
+            db.timeDao().insertTask(new TaskEntity("task_java", userId, "Nộp bài tập Java", cal.getTimeInMillis(), "Cao", 120, "Chưa thực hiện", null, false));
 
             // Default events
             cal.set(currentYear, currentMonth, currentDay, 23, 0, 0);
@@ -501,34 +655,260 @@ public final class MockDataRepository {
             long e0End = cal.getTimeInMillis();
             // Reset cal to today
             cal.setTimeInMillis(System.currentTimeMillis());
-            db.timeDao().insertEvent(new CalendarEventEntity("e0", email, "Giờ ngủ", e0Start, e0End, "sleep", null, null, null, null, false, null, null, null, false));
+            db.timeDao().insertEvent(new CalendarEventEntity("e0", userId, "Giờ ngủ", e0Start, e0End, "sleep", null, null, null, null, false, null, null, null, false));
 
             cal.set(currentYear, currentMonth, currentDay, 8, 0, 0);
             long e1Start = cal.getTimeInMillis();
             cal.set(currentYear, currentMonth, currentDay, 10, 0, 0);
             long e1End = cal.getTimeInMillis();
-            db.timeDao().insertEvent(new CalendarEventEntity("e1", email, "Học nhóm", e1Start, e1End, "event", null, null, null, null, false, null, null, null, false));
+            db.timeDao().insertEvent(new CalendarEventEntity("e1", userId, "Học nhóm", e1Start, e1End, "event", null, null, null, null, false, null, null, null, false));
 
             cal.set(currentYear, currentMonth, currentDay, 14, 0, 0);
             long e2Time = cal.getTimeInMillis();
-            db.timeDao().insertEvent(new CalendarEventEntity("e2", email, "Nộp bài tập Java", e2Time, e2Time, "task", "Cao", "task_java", "Đã lên lịch", null, false, null, null, null, false));
+            db.timeDao().insertEvent(new CalendarEventEntity("e2", userId, "Nộp bài tập Java", e2Time, e2Time, "task", "Cao", "task_java", "Đã lên lịch", null, false, null, null, null, false));
 
             cal.set(currentYear, currentMonth, currentDay, 14, 0, 0);
             long e3Start = cal.getTimeInMillis();
             cal.set(currentYear, currentMonth, currentDay, 16, 30, 0);
             long e3End = cal.getTimeInMillis();
-            db.timeDao().insertEvent(new CalendarEventEntity("e3", email, "Học Thể chất - Sân B2", e3Start, e3End, "event", null, null, null, null, false, null, null, null, false));
+            db.timeDao().insertEvent(new CalendarEventEntity("e3", userId, "Học Thể chất - Sân B2", e3Start, e3End, "event", null, null, null, null, false, null, null, null, false));
 
             cal.set(currentYear, currentMonth, currentDay, 19, 0, 0);
             long e4Start = cal.getTimeInMillis();
             cal.set(currentYear, currentMonth, currentDay, 21, 0, 0);
             long e4End = cal.getTimeInMillis();
-            db.timeDao().insertEvent(new CalendarEventEntity("e4", email, "Tập Gym", e4Start, e4End, "event", null, null, null, null, false, null, null, null, false));
+            db.timeDao().insertEvent(new CalendarEventEntity("e4", userId, "Tập Gym", e4Start, e4End, "event", null, null, null, null, false, null, null, null, false));
 
             // Default notifications
-            db.notificationDao().insertNotification(new NotificationLogEntity("r1", email, "Hạn nộp học phí", "Còn 2 ngày", "task_deadline", "primary", System.currentTimeMillis() - 3600000, false, ""));
-            db.notificationDao().insertNotification(new NotificationLogEntity("r2", email, "Cảnh báo ngân sách", "Ngân sách Ăn uống sắp hết (Còn 150k)", "budget_80", "warning", System.currentTimeMillis() - 7200000, false, "food"));
-            db.notificationDao().insertNotification(new NotificationLogEntity("r3", email, "Nộp bài tập Java", "Hạn 14:00 hôm nay", "task_deadline", "danger", System.currentTimeMillis() - 10800000, false, "task_java"));
+            db.notificationDao().insertNotification(new NotificationLogEntity("r1", userId, "Hạn nộp học phí", "Còn 2 ngày", "task_deadline", "primary", System.currentTimeMillis() - 3600000, false, ""));
+            db.notificationDao().insertNotification(new NotificationLogEntity("r2", userId, "Cảnh báo ngân sách", "Ngân sách Ăn uống sắp hết (Còn 150k)", "budget_80", "warning", System.currentTimeMillis() - 7200000, false, "food"));
+            db.notificationDao().insertNotification(new NotificationLogEntity("r3", userId, "Nộp bài tập Java", "Hạn 14:00 hôm nay", "task_deadline", "danger", System.currentTimeMillis() - 10800000, false, "task_java"));
         }
+    }
+
+    // --- Dynamic Statistics Models ---
+    public static class CategoryStat {
+        public final String categoryName;
+        public final long spent;
+        public final int percent;
+
+        public CategoryStat(String categoryName, long spent, int percent) {
+            this.categoryName = categoryName;
+            this.spent = spent;
+            this.percent = percent;
+        }
+    }
+
+    public static class ProductStat {
+        public final String productName;
+        public final int count;
+        public final long totalSpent;
+
+        public ProductStat(String productName, int count, long totalSpent) {
+            this.productName = productName;
+            this.count = count;
+            this.totalSpent = totalSpent;
+        }
+    }
+
+    // --- Category Budgets Management ---
+    public List<CategoryBudgetEntity> getCategoryBudgets(String monthLabel) {
+        String userId = getCurrentUserId();
+        return db.financeDao().getCategoryBudgets(userId, monthLabel);
+    }
+
+    public long getTotalAllocatedBudget(String monthLabel) {
+        String userId = getCurrentUserId();
+        return db.financeDao().getTotalAllocatedBudget(userId, monthLabel);
+    }
+
+    public void saveCategoryBudgets(List<CategoryBudgetEntity> list) {
+        for (CategoryBudgetEntity cb : list) {
+            db.financeDao().insertCategoryBudget(cb);
+        }
+    }
+
+    public void scaleCategoryBudgetsProportionally(long newTotalBudget) {
+        String userId = getCurrentUserId();
+        String monthLabel = getCurrentMonthLabel();
+        long totalAllocated = db.financeDao().getTotalAllocatedBudget(userId, monthLabel);
+        if (totalAllocated <= 0) return;
+
+        double ratio = (double) newTotalBudget / totalAllocated;
+        List<CategoryBudgetEntity> allocatedList = db.financeDao().getCategoryBudgets(userId, monthLabel);
+        long newAllocatedSum = 0;
+
+        for (int i = 0; i < allocatedList.size(); i++) {
+            CategoryBudgetEntity cb = allocatedList.get(i);
+            long newAmount = Math.round(cb.amount * ratio);
+            newAllocatedSum += newAmount;
+            cb.amount = newAmount;
+            db.financeDao().insertCategoryBudget(cb);
+        }
+
+        // If due to rounding, newAllocatedSum exceeds newTotalBudget, adjust the largest one
+        if (newAllocatedSum > newTotalBudget) {
+            long diff = newAllocatedSum - newTotalBudget;
+            CategoryBudgetEntity maxCb = null;
+            for (CategoryBudgetEntity cb : allocatedList) {
+                if (maxCb == null || cb.amount > maxCb.amount) {
+                    maxCb = cb;
+                }
+            }
+            if (maxCb != null && maxCb.amount >= diff) {
+                maxCb.amount -= diff;
+                db.financeDao().insertCategoryBudget(maxCb);
+            }
+        }
+    }
+
+    // --- Product Standardization (TT_11) ---
+    public static String removeAccents(String src) {
+        if (src == null) return "";
+        String temp = Normalizer.normalize(src, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(temp).replaceAll("")
+                .replaceAll("đ", "d")
+                .replaceAll("Đ", "D");
+    }
+
+    public static String standardizeProductName(String name) {
+        if (name == null) return "";
+        String normalized = removeAccents(name);
+        normalized = normalized.trim().replaceAll("\\s+", " ").toLowerCase(Locale.getDefault());
+        return normalized;
+    }
+
+    // --- Category Stats Calculation (SV_QD_11) ---
+    public List<CategoryStat> getCategorySpentRatios() {
+        String userId = getCurrentUserId();
+        String monthLabel = getCurrentMonthLabel();
+        long[] range = getMonthRange(monthLabel);
+        long maxTime = Math.min(range[1], System.currentTimeMillis());
+        
+        long totalSpent = db.financeDao().sumSpentByMonth(userId, range[0], maxTime);
+        List<CategoryEntity> categories = db.financeDao().getVisibleCategories(userId);
+        List<CategoryStat> stats = new ArrayList<>();
+        
+        if (totalSpent <= 0) {
+            for (CategoryEntity cat : categories) {
+                stats.add(new CategoryStat(cat.name, 0, 0));
+            }
+            return stats;
+        }
+
+        long calculatedSpent = 0;
+        for (CategoryEntity cat : categories) {
+            long spent = db.financeDao().sumSpentByCategoryMonth(userId, cat.id, range[0], maxTime);
+            if (spent > 0) {
+                int percent = (int) Math.round((double) spent * 100.0 / totalSpent);
+                stats.add(new CategoryStat(cat.name, spent, percent));
+                calculatedSpent += spent;
+            }
+        }
+        
+        // Handle unallocated expenses (TT_06)
+        long unallocated = totalSpent - calculatedSpent;
+        if (unallocated > 0) {
+            int percent = (int) Math.round((double) unallocated * 100.0 / totalSpent);
+            stats.add(new CategoryStat("Khác / Chưa phân loại", unallocated, percent));
+        }
+
+        // Sort by spent descending
+        Collections.sort(stats, (o1, o2) -> Long.compare(o2.spent, o1.spent));
+        return stats;
+    }
+
+    // --- Top Purchased Products Calculation (SV_QD_12, TT_12) ---
+    public List<ProductStat> getTopPurchasedProducts() {
+        String userId = getCurrentUserId();
+        String monthLabel = getCurrentMonthLabel();
+        long[] range = getMonthRange(monthLabel);
+        long maxTime = Math.min(range[1], System.currentTimeMillis());
+
+        // Get active transactions
+        List<TransactionEntity> transactions = db.financeDao().getActiveTransactions(userId);
+        
+        // Group by standardized name
+        Map<String, List<TransactionEntity>> grouped = new HashMap<>();
+        Map<String, String> displayNames = new HashMap<>();
+
+        for (TransactionEntity t : transactions) {
+            if (!"expense".equals(t.type)) continue;
+            if (t.timestamp < range[0] || t.timestamp > maxTime) continue;
+
+            String std = standardizeProductName(t.name);
+            if (std.isEmpty()) continue;
+
+            if (!grouped.containsKey(std)) {
+                grouped.put(std, new ArrayList<>());
+                displayNames.put(std, t.name);
+            }
+            grouped.get(std).add(t);
+        }
+
+        List<ProductStat> stats = new ArrayList<>();
+        for (Map.Entry<String, List<TransactionEntity>> entry : grouped.entrySet()) {
+            List<TransactionEntity> list = entry.getValue();
+            int count = list.size();
+            
+            // Rule TT_12: Frequency >= 3
+            if (count >= 3) {
+                long totalSpent = 0;
+                for (TransactionEntity t : list) {
+                    totalSpent += t.amount;
+                }
+                String originalName = displayNames.get(entry.getKey());
+                stats.add(new ProductStat(originalName, count, totalSpent));
+            }
+        }
+
+        // Sort by count descending, then by totalSpent descending
+        Collections.sort(stats, (o1, o2) -> {
+            int comp = Integer.compare(o2.count, o1.count);
+            if (comp != 0) return comp;
+            return Long.compare(o2.totalSpent, o1.totalSpent);
+        });
+
+        return stats;
+    }
+
+    public List<ProductStat> getTopSpentProducts() {
+        String userId = getCurrentUserId();
+        String monthLabel = getCurrentMonthLabel();
+        long[] range = getMonthRange(monthLabel);
+        long maxTime = Math.min(range[1], System.currentTimeMillis());
+
+        List<TransactionEntity> transactions = db.financeDao().getActiveTransactions(userId);
+        Map<String, List<TransactionEntity>> grouped = new HashMap<>();
+        Map<String, String> displayNames = new HashMap<>();
+
+        for (TransactionEntity t : transactions) {
+            if (!"expense".equals(t.type)) continue;
+            if (t.timestamp < range[0] || t.timestamp > maxTime) continue;
+
+            String std = standardizeProductName(t.name);
+            if (std.isEmpty()) continue;
+
+            if (!grouped.containsKey(std)) {
+                grouped.put(std, new ArrayList<>());
+                displayNames.put(std, t.name);
+            }
+            grouped.get(std).add(t);
+        }
+
+        List<ProductStat> stats = new ArrayList<>();
+        for (Map.Entry<String, List<TransactionEntity>> entry : grouped.entrySet()) {
+            List<TransactionEntity> list = entry.getValue();
+            long totalSpent = 0;
+            for (TransactionEntity t : list) {
+                totalSpent += t.amount;
+            }
+            String originalName = displayNames.get(entry.getKey());
+            stats.add(new ProductStat(originalName, list.size(), totalSpent));
+        }
+
+        Collections.sort(stats, (o1, o2) -> Long.compare(o2.totalSpent, o1.totalSpent));
+        return stats;
     }
 }

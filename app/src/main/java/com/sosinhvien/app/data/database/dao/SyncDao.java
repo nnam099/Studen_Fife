@@ -18,26 +18,26 @@ import java.util.List;
 @Dao
 public interface SyncDao {
     // Queries to fetch unsynced local data
-    @Query("SELECT * FROM categories WHERE user_email = :email AND is_synced = 0")
-    List<CategoryEntity> getUnsyncedCategories(String email);
+    @Query("SELECT * FROM categories WHERE user_id = :userId AND is_synced = 0")
+    List<CategoryEntity> getUnsyncedCategories(String userId);
 
-    @Query("SELECT * FROM budgets WHERE user_email = :email AND is_synced = 0")
-    List<BudgetEntity> getUnsyncedBudgets(String email);
+    @Query("SELECT * FROM budgets WHERE user_id = :userId AND is_synced = 0")
+    List<BudgetEntity> getUnsyncedBudgets(String userId);
 
-    @Query("SELECT * FROM category_budgets WHERE user_email = :email AND is_synced = 0")
-    List<CategoryBudgetEntity> getUnsyncedCategoryBudgets(String email);
+    @Query("SELECT * FROM category_budgets WHERE user_id = :userId AND is_synced = 0")
+    List<CategoryBudgetEntity> getUnsyncedCategoryBudgets(String userId);
 
-    @Query("SELECT * FROM transactions WHERE user_email = :email AND is_synced = 0")
-    List<TransactionEntity> getUnsyncedTransactions(String email);
+    @Query("SELECT * FROM transactions WHERE user_id = :userId AND is_synced = 0")
+    List<TransactionEntity> getUnsyncedTransactions(String userId);
 
-    @Query("SELECT * FROM tasks WHERE user_email = :email AND is_synced = 0")
-    List<TaskEntity> getUnsyncedTasks(String email);
+    @Query("SELECT * FROM tasks WHERE user_id = :userId AND is_synced = 0")
+    List<TaskEntity> getUnsyncedTasks(String userId);
 
-    @Query("SELECT * FROM calendar_events WHERE user_email = :email AND is_synced = 0")
-    List<CalendarEventEntity> getUnsyncedCalendarEvents(String email);
+    @Query("SELECT * FROM calendar_events WHERE user_id = :userId AND is_synced = 0")
+    List<CalendarEventEntity> getUnsyncedCalendarEvents(String userId);
 
-    @Query("SELECT * FROM user_configs WHERE user_email = :email AND is_synced = 0 LIMIT 1")
-    UserConfigEntity getUnsyncedUserConfig(String email);
+    @Query("SELECT * FROM user_configs WHERE user_id = :userId AND is_synced = 0 LIMIT 1")
+    UserConfigEntity getUnsyncedUserConfig(String userId);
 
     // Bulk inserts/upserts for pulling data from server
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -62,21 +62,21 @@ public interface SyncDao {
     void insertUserConfig(UserConfigEntity userConfig);
 
     // Queries to mark items as synced
-    @Query("UPDATE categories SET is_synced = 1 WHERE user_email = :email AND id IN (:ids)")
-    void markCategoriesSynced(String email, List<String> ids);
+    @Query("UPDATE categories SET is_synced = 1 WHERE user_id = :userId AND id IN (:ids)")
+    void markCategoriesSynced(String userId, List<String> ids);
 
-    @Query("UPDATE budgets SET is_synced = 1 WHERE user_email = :email AND month_label IN (:monthLabels)")
-    void markBudgetsSynced(String email, List<String> monthLabels);
+    @Query("UPDATE budgets SET is_synced = 1 WHERE user_id = :userId AND month_label IN (:monthLabels)")
+    void markBudgetsSynced(String userId, List<String> monthLabels);
 
-    @Query("UPDATE transactions SET is_synced = 1 WHERE user_email = :email AND id IN (:ids)")
-    void markTransactionsSynced(String email, List<String> ids);
+    @Query("UPDATE transactions SET is_synced = 1 WHERE user_id = :userId AND id IN (:ids)")
+    void markTransactionsSynced(String userId, List<String> ids);
 
-    @Query("UPDATE tasks SET is_synced = 1 WHERE user_email = :email AND id IN (:ids)")
-    void markTasksSynced(String email, List<String> ids);
+    @Query("UPDATE tasks SET is_synced = 1 WHERE user_id = :userId AND id IN (:ids)")
+    void markTasksSynced(String userId, List<String> ids);
 
-    @Query("UPDATE calendar_events SET is_synced = 1 WHERE user_email = :email AND id IN (:ids)")
-    void markCalendarEventsSynced(String email, List<String> ids);
+    @Query("UPDATE calendar_events SET is_synced = 1 WHERE user_id = :userId AND id IN (:ids)")
+    void markCalendarEventsSynced(String userId, List<String> ids);
 
-    @Query("UPDATE user_configs SET is_synced = 1 WHERE user_email = :email")
-    void markUserConfigSynced(String email);
+    @Query("UPDATE user_configs SET is_synced = 1 WHERE user_id = :userId")
+    void markUserConfigSynced(String userId);
 }

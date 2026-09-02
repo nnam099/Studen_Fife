@@ -48,6 +48,7 @@ public class CalendarEventAdapter extends RecyclerView.Adapter<CalendarEventAdap
                 break;
         }
         holder.type.setText(typeLabel);
+        holder.overdue.setVisibility(item.isOverdue() ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -59,12 +60,14 @@ public class CalendarEventAdapter extends RecyclerView.Adapter<CalendarEventAdap
         TextView time;
         TextView title;
         TextView type;
+        TextView overdue;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             time = itemView.findViewById(R.id.text_time);
             title = itemView.findViewById(R.id.text_title);
             type = itemView.findViewById(R.id.text_type);
+            overdue = itemView.findViewById(R.id.text_overdue_badge);
         }
     }
 }

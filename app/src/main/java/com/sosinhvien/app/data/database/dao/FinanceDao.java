@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
+import com.sosinhvien.app.data.database.entity.AuditLogEntity;
 import com.sosinhvien.app.data.database.entity.BudgetEntity;
 import com.sosinhvien.app.data.database.entity.BudgetWarningEntity;
 import com.sosinhvien.app.data.database.entity.CategoryBudgetEntity;
@@ -21,14 +22,14 @@ public interface FinanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertCategory(CategoryEntity category);
 
-    @Query("SELECT * FROM categories WHERE user_email = :email AND visible = 1")
-    List<CategoryEntity> getVisibleCategories(String email);
+    @Query("SELECT * FROM categories WHERE user_id = :userId AND visible = 1")
+    List<CategoryEntity> getVisibleCategories(String userId);
 
-    @Query("SELECT * FROM categories WHERE user_email = :email")
-    List<CategoryEntity> getAllCategories(String email);
+    @Query("SELECT * FROM categories WHERE user_id = :userId")
+    List<CategoryEntity> getAllCategories(String userId);
 
-    @Query("SELECT * FROM categories WHERE user_email = :email AND id = :id LIMIT 1")
-    CategoryEntity getCategoryById(String email, String id);
+    @Query("SELECT * FROM categories WHERE user_id = :userId AND id = :id LIMIT 1")
+    CategoryEntity getCategoryById(String userId, String id);
 
     @Update
     void updateCategory(CategoryEntity category);
@@ -37,8 +38,8 @@ public interface FinanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertBudget(BudgetEntity budget);
 
-    @Query("SELECT * FROM budgets WHERE user_email = :email AND month_label = :monthLabel LIMIT 1")
-    BudgetEntity getBudget(String email, String monthLabel);
+    @Query("SELECT * FROM budgets WHERE user_id = :userId AND month_label = :monthLabel LIMIT 1")
+    BudgetEntity getBudget(String userId, String monthLabel);
 
     @Update
     void updateBudget(BudgetEntity budget);
@@ -47,11 +48,11 @@ public interface FinanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertCategoryBudget(CategoryBudgetEntity categoryBudget);
 
-    @Query("SELECT * FROM category_budgets WHERE user_email = :email AND month_label = :monthLabel")
-    List<CategoryBudgetEntity> getCategoryBudgets(String email, String monthLabel);
+    @Query("SELECT * FROM category_budgets WHERE user_id = :userId AND month_label = :monthLabel")
+    List<CategoryBudgetEntity> getCategoryBudgets(String userId, String monthLabel);
 
-    @Query("SELECT SUM(amount) FROM category_budgets WHERE user_email = :email AND month_label = :monthLabel")
-    long getTotalAllocatedBudget(String email, String monthLabel);
+    @Query("SELECT SUM(amount) FROM category_budgets WHERE user_id = :userId AND month_label = :monthLabel")
+    long getTotalAllocatedBudget(String userId, String monthLabel);
 
     @Delete
     void deleteCategoryBudget(CategoryBudgetEntity categoryBudget);
@@ -66,25 +67,29 @@ public interface FinanceDao {
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
     TransactionEntity getTransactionById(String id);
 
-    @Query("SELECT * FROM transactions WHERE user_email = :email AND deleted = 0 ORDER BY timestamp DESC")
-    List<TransactionEntity> getActiveTransactions(String email);
+    @Query("SELECT * FROM transactions WHERE user_id = :userId AND deleted = 0 ORDER BY timestamp DESC")
+    List<TransactionEntity> getActiveTransactions(String userId);
 
-    @Query("SELECT * FROM transactions WHERE user_email = :email AND type = :type AND deleted = 0 ORDER BY timestamp DESC")
-    List<TransactionEntity> getActiveTransactionsByType(String email, String type);
+    @Query("SELECT * FROM transactions WHERE user_id = :userId AND type = :type AND deleted = 0 ORDER BY timestamp DESC")
+    List<TransactionEntity> getActiveTransactionsByType(String userId, String type);
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_email = :email AND type = 'expense' AND deleted = 0 AND timestamp >= :startTime AND timestamp <= :endTime")
-    long sumSpentByMonth(String email, long startTime, long endTime);
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = :userId AND type = 'expense' AND deleted = 0 AND timestamp >= :startTime AND timestamp <= :endTime")
+    long sumSpentByMonth(String userId, long startTime, long endTime);
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_email = :email AND type = 'expense' AND category_id = :categoryId AND deleted = 0 AND timestamp >= :startTime AND timestamp <= :endTime")
-    long sumSpentByCategoryMonth(String email, String categoryId, long startTime, long endTime);
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = :userId AND type = 'expense' AND category_id = :categoryId AND deleted = 0 AND timestamp >= :startTime AND timestamp <= :endTime")
+    long sumSpentByCategoryMonth(String userId, String categoryId, long startTime, long endTime);
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_email = :email AND type = 'income' AND deleted = 0 AND timestamp >= :startTime AND timestamp <= :endTime")
-    long sumIncomeByMonth(String email, long startTime, long endTime);
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = :userId AND type = 'income' AND deleted = 0 AND timestamp >= :startTime AND timestamp <= :endTime")
+    long sumIncomeByMonth(String userId, long startTime, long endTime);
 
     // Warning Flags
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertWarningFlag(BudgetWarningEntity flag);
 
-    @Query("SELECT * FROM budget_warning_flags WHERE user_email = :email AND month_label = :monthLabel AND category_id = :categoryId LIMIT 1")
-    BudgetWarningEntity getWarningFlag(String email, String monthLabel, String categoryId);
+    @Query("SELECT * FROM budget_warning_flags WHERE user_id = :userId AND month_label = :monthLabel AND category_id = :categoryId LIMIT 1")
+    BudgetWarningEntity getWarningFlag(String userId, String monthLabel, String categoryId);
+
+    // Audit Log
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAuditLog(AuditLogEntity log);
 }

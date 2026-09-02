@@ -30,9 +30,16 @@ public class SettingsFragment extends Fragment {
         binding.textUserEmail.setText(session.getEmail());
 
         binding.btnLogout.setOnClickListener(v -> {
-            session.logout();
-            startActivity(new Intent(requireContext(), AuthActivity.class));
-            requireActivity().finish();
+            new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setTitle("Đăng xuất")
+                    .setMessage("Dữ liệu chưa đồng bộ có thể bị mất. Bạn có chắc muốn đăng xuất?")
+                    .setPositiveButton("Đăng xuất", (dialog, which) -> {
+                        session.logout();
+                        startActivity(new Intent(requireContext(), AuthActivity.class));
+                        requireActivity().finish();
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
         });
 
         binding.switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) ->

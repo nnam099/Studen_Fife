@@ -9,13 +9,30 @@ public class SessionManager {
     private static final String KEY_ONBOARDED = "onboarded";
     private static final String KEY_DISPLAY_NAME = "display_name";
     private static final String KEY_EMAIL = "email";
+    private static final String KEY_USER_ID = "user_id";
     private static final String KEY_TOKEN = "jwt_token";
     private static final String KEY_LAST_SYNC_TIME = "last_sync_time";
 
-    private final SharedPreferences prefs;
+    private SharedPreferences prefs;
 
     public SessionManager(Context context) {
-        prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        try {
+            androidx.security.crypto.MasterKey masterKey = new androidx.security.crypto.MasterKey.Builder(context)
+                    .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+                    .build();
+
+            prefs = androidx.security.crypto.EncryptedSharedPreferences.create(
+                    context,
+                    PREFS,
+                    masterKey,
+                    androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback for devices where keystore might be corrupted/unsupported (rare, but good practice for demo)
+            prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        }
     }
 
     public boolean isLoggedIn() {
@@ -26,9 +43,10 @@ public class SessionManager {
         return prefs.getBoolean(KEY_ONBOARDED, false);
     }
 
-    public void login(String email, String displayName, String token) {
+    public void login(String userId, String email, String displayName, String token) {
         prefs.edit()
                 .putBoolean(KEY_LOGGED_IN, true)
+                .putString(KEY_USER_ID, userId)
                 .putString(KEY_EMAIL, email)
                 .putString(KEY_DISPLAY_NAME, displayName)
                 .putString(KEY_TOKEN, token)
@@ -49,6 +67,10 @@ public class SessionManager {
 
     public String getEmail() {
         return prefs.getString(KEY_EMAIL, "demo@truong.edu.vn");
+    }
+
+    public String getUserId() {
+        return prefs.getString(KEY_USER_ID, "default_user_id");
     }
 
     public String getToken() {

@@ -11,6 +11,7 @@ import com.sosinhvien.app.data.database.dao.NotificationDao;
 import com.sosinhvien.app.data.database.dao.SyncDao;
 import com.sosinhvien.app.data.database.dao.TimeDao;
 import com.sosinhvien.app.data.database.dao.UserDao;
+import com.sosinhvien.app.data.database.entity.AuditLogEntity;
 import com.sosinhvien.app.data.database.entity.BudgetEntity;
 import com.sosinhvien.app.data.database.entity.BudgetWarningEntity;
 import com.sosinhvien.app.data.database.entity.CategoryBudgetEntity;
@@ -32,8 +33,9 @@ import com.sosinhvien.app.data.database.entity.TransactionEntity;
         CalendarEventEntity.class,
         UserConfigEntity.class,
         NotificationLogEntity.class,
-        BudgetWarningEntity.class
-}, version = 2, exportSchema = false)
+        BudgetWarningEntity.class,
+        AuditLogEntity.class
+}, version = 3, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase instance;
@@ -50,7 +52,6 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (instance == null) {
                     instance = Room.databaseBuilder(context.getApplicationContext(),
                                     AppDatabase.class, "so_sinh_vien_db")
-                            .allowMainThreadQueries() // Simple for demo and testing, can be optimized later
                             .fallbackToDestructiveMigration()
                             .build();
                 }

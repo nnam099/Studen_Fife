@@ -5,12 +5,14 @@ public class Budget {
     private final long totalBudget;
     private final long openingBalance;
     private final long spent;
+    private final long income;
 
-    public Budget(String monthLabel, long totalBudget, long openingBalance, long spent) {
+    public Budget(String monthLabel, long totalBudget, long openingBalance, long spent, long income) {
         this.monthLabel = monthLabel;
         this.totalBudget = totalBudget;
         this.openingBalance = openingBalance;
         this.spent = spent;
+        this.income = income;
     }
 
     public String getMonthLabel() {
@@ -29,16 +31,20 @@ public class Budget {
         return spent;
     }
 
+    public long getIncome() {
+        return income;
+    }
+
     public long getRemaining() {
         return totalBudget - spent;
     }
 
     public int getUsagePercent() {
         if (totalBudget <= 0) return 0;
-        return (int) Math.min(100, (spent * 100) / totalBudget);
+        return (int) Math.round((double) spent * 100.0 / totalBudget);
     }
 
     public long getAvailableBalance() {
-        return openingBalance - spent;
+        return openingBalance + income - spent;
     }
 }

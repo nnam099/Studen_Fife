@@ -31,40 +31,64 @@ public class AddTransactionActivity extends AppCompatActivity {
             binding.btnExpense.setChecked(true);
         }
 
-        binding.btnSave.setOnClickListener(v -> {
-            String name = binding.editName.getText() != null ? binding.editName.getText().toString().trim() : "";
-            String amountStr = binding.editAmount.getText() != null ? binding.editAmount.getText().toString().trim() : "0";
-            long amount = 0;
-            try {
-                amount = Long.parseLong(amountStr);
-            } catch (NumberFormatException ignored) {}
-
-            if (name.isEmpty() || amount <= 0) {
-                Toast.makeText(this, "Vui lòng nhập tên và số tiền hợp lệ", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            String selectedType = binding.btnIncome.isChecked() ? Transaction.TYPE_INCOME : Transaction.TYPE_EXPENSE;
-            String catName = binding.editCategory.getText() != null ? binding.editCategory.getText().toString().trim() : "";
-            String categoryId = null;
-
-            if (selectedType.equals(Transaction.TYPE_EXPENSE)) {
-                categoryId = "other";
-                if (catName.equalsIgnoreCase("Ăn uống") || catName.toLowerCase().contains("ăn")) {
-                    categoryId = "food";
-                } else if (catName.equalsIgnoreCase("Di chuyển") || catName.toLowerCase().contains("chuyển") || catName.toLowerCase().contains("đi")) {
-                    categoryId = "transport";
-                } else if (catName.equalsIgnoreCase("Học tập") || catName.toLowerCase().contains("học")) {
-                    categoryId = "study";
-                } else if (catName.equalsIgnoreCase("Giải trí") || catName.toLowerCase().contains("chơi") || catName.toLowerCase().contains("trí")) {
-                    categoryId = "entertainment";
+        // Setup category dropdown
+        MockDataRepository.getInstance().executeAsync(() -> {
+            java.util.List<com.sosinhvien.app.data.model.Category> categories = MockDataRepository.getInstance().getAllCategories();
+            MockDataRepository.getInstance().runOnMainThread(() -> {
+                java.util.List<String> categoryNames = new java.util.ArrayList<>();
+                java.util.Map<String, String> nameToIdMap = new java.util.HashMap<>();
+                for (com.sosinhvien.app.data.model.Category cat : categories) {
+                    if (cat.isVisible()) {
+                        categoryNames.add(cat.getName());
+                        nameToIdMap.put(cat.getName(), cat.getId());
+                    }
                 }
-            }
+                android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, categoryNames);
+                binding.editCategory.setAdapter(adapter);
+                if (!categoryNames.isEmpty()) {
+                    binding.editCategory.setText(categoryNames.get(0), false);
+                }
 
-            MockDataRepository.getInstance().addTransaction(name, categoryId, amount, selectedType, Transaction.SOURCE_MANUAL);
-            Toast.makeText(this, "Đã lưu giao dịch thành công", Toast.LENGTH_SHORT).show();
-            finish();
+                binding.btnSave.setOnClickListener(v -> {
+                    String name = binding.editName.getText() != null ? binding.editName.getText().toString().trim() : "";
+                    String amountStr = binding.editAmount.getText() != null ? binding.editAmount.getText().toString().trim() : "0";
+                    long amount = 0;
+                    try {
+                        amount = Long.parseLong(amountStr);
+                    } catch (NumberFormatException ignored) {}
+
+                    if (name.isEmpty() || amount <= 0) {
+                        Toast.makeText(this, "Vui lòng nhập tên và số tiền hợp lệ", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (amount > 999_999_999) {
+                        Toast.makeText(this, "Số tiền tối đa là 999.999.999 đ", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    String selectedType = binding.btnIncome.isChecked() ? Transaction.TYPE_INCOME : Transaction.TYPE_EXPENSE;
+                    String catName = binding.editCategory.getText() != null ? binding.editCategory.getText().toString().trim() : "";
+                    String categoryId = nameToIdMap.getOrDefault(catName, null);
+
+                    if (selectedType.equals(Transaction.TYPE_EXPENSE) && categoryId == null) {
+                        categoryId = "other"; // fallback if somehow not selected
+                    }
+                    
+                    final String finalCategoryId = categoryId;
+                    final long finalAmount = amount;
+                    MockDataRepository.getInstance().executeAsync(() -> {
+                        MockDataRepository.getInstance().addTransaction(name, finalCategoryId, finalAmount, selectedType, Transaction.SOURCE_MANUAL);
+                        MockDataRepository.getInstance().runOnMainThread(() -> {
+                            Toast.makeText(this, "Đã lưu giao dịch thành công", Toast.LENGTH_SHORT).show();
+                            finish();
+                        });
+                    });
+                });
+            });
         });
+
+
     }
 
     @Override

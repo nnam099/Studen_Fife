@@ -1,20 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@drawable/bg_app_gradient"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"
+            android:text="Lịch biểu"
+            android:textColor="@color/on_surface"
+            android:textSize="28sp"
+            android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/toggle_calendar_view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:singleSelection="true">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_day"
@@ -45,51 +58,131 @@
             android:id="@+id/text_month_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
             android:text="Tháng 10, 2025"
-            style="@style/TextAppearance.SoSinhVien.Title" />
+            android:textColor="@color/on_surface"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            style="@style/Widget.SoSinhVien.Card">
+            android:layout_marginBottom="22dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="0dp">
 
-            <GridLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:columnCount="7"
-                android:padding="12dp">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T2" android:textSize="12sp" />
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T3" android:textSize="12sp" />
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T4" android:textSize="12sp" />
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T5" android:textSize="12sp" />
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T6" android:textSize="12sp" />
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T7" android:textSize="12sp" />
-                <TextView android:layout_columnWeight="1" android:gravity="center" android:text="CN" android:textSize="12sp" />
-            </GridLayout>
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="7">
+
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T2" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/on_surface_subtle" />
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T3" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/on_surface_subtle" />
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T4" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/on_surface_subtle" />
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T5" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/on_surface_subtle" />
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T6" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/on_surface_subtle" />
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="T7" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/primary" />
+                    <TextView android:layout_columnWeight="1" android:gravity="center" android:text="CN" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/danger" />
+                </GridLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_variant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_variant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_variant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@color/secondary_container" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_variant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@color/primary_container" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_variant" />
+                </LinearLayout>
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginBottom="14dp"
             android:text="@string/today_agenda"
-            style="@style/TextAppearance.SoSinhVien.Title" />
+            android:textColor="@color/on_surface"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_events"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="22dp"
             android:nestedScrollingEnabled="false" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_ai_schedule"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/ai_schedule" />
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_import_calendar"
+                style="@style/Widget.SoSinhVien.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:layout_weight="1"
+                app:icon="@drawable/ic_insert_chart"
+                android:text="Đồng bộ" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_ai_schedule"
+                style="@style/Widget.SoSinhVien.Button.Primary"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:icon="@android:drawable/ic_dialog_email"
+                android:text="@string/ai_schedule" />
+        </LinearLayout>
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

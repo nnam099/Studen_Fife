@@ -11,10 +11,11 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "tasks",
+    indices = {@androidx.room.Index("user_id")},
     foreignKeys = @ForeignKey(
         entity = UserEntity.class,
-        parentColumns = "email",
-        childColumns = "user_email",
+        parentColumns = "id",
+        childColumns = "user_id",
         onDelete = ForeignKey.CASCADE
     )
 )
@@ -24,10 +25,10 @@ public class TaskEntity {
     @SerializedName("id")
     public String id;
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @NonNull
     @SerializedName("title")
@@ -66,11 +67,11 @@ public class TaskEntity {
     @SerializedName("is_deleted")
     public int isDeleted = 0;
 
-    public TaskEntity(@NonNull String id, @NonNull String userEmail, @NonNull String name,
+    public TaskEntity(@NonNull String id, @NonNull String userId, @NonNull String name,
                       long deadline, @NonNull String priority, int estimatedDuration,
                       @NonNull String status, @Nullable Long completedTime, boolean deleted) {
         this.id = id;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.name = name;
         this.deadline = deadline;
         this.priority = priority;
@@ -79,5 +80,9 @@ public class TaskEntity {
         this.completedTime = completedTime;
         this.deleted = deleted;
         this.isDeleted = deleted ? 1 : 0;
+    }
+
+    public boolean isOverdue() {
+        return deadline < System.currentTimeMillis() && !"Đã hoàn thành".equals(status);
     }
 }

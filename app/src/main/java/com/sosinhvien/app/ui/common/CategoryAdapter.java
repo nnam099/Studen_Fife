@@ -15,10 +15,17 @@ import java.util.List;
 
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHolder> {
 
-    private final List<Category> items;
+    public interface OnCategoryActionListener {
+        void onRenameClick(Category category);
+        void onHideClick(Category category);
+    }
 
-    public CategoryAdapter(List<Category> items) {
+    private final List<Category> items;
+    private final OnCategoryActionListener listener;
+
+    public CategoryAdapter(List<Category> items, OnCategoryActionListener listener) {
         this.items = items;
+        this.listener = listener;
     }
 
     @NonNull
@@ -34,6 +41,20 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         Category item = items.get(position);
         holder.name.setText(item.getName());
         holder.badge.setVisibility(item.isDefault() ? View.VISIBLE : View.GONE);
+
+        holder.itemView.setOnClickListener(v -> {
+            androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(v.getContext());
+            builder.setTitle("Tùy chọn danh mục");
+            String[] options = {"Đổi tên", "Ẩn danh mục"};
+            builder.setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    listener.onRenameClick(item);
+                } else {
+                    listener.onHideClick(item);
+                }
+            });
+            builder.show();
+        });
     }
 
     @Override

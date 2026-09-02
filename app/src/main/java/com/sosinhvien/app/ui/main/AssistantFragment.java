@@ -31,10 +31,16 @@ public class AssistantFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         binding = FragmentAssistantBinding.inflate(inflater, container, false);
 
-        messages.addAll(MockDataRepository.getInstance().getInitialChatMessages());
-        adapter = new ChatAdapter(messages);
-        binding.recyclerChat.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.recyclerChat.setAdapter(adapter);
+        MockDataRepository.getInstance().executeAsync(() -> {
+            java.util.List<com.sosinhvien.app.data.model.ChatMessage> initialMsgs = MockDataRepository.getInstance().getInitialChatMessages();
+            MockDataRepository.getInstance().runOnMainThread(() -> {
+                if (binding == null) return;
+                messages.addAll(initialMsgs);
+                adapter = new ChatAdapter(messages);
+                binding.recyclerChat.setLayoutManager(new LinearLayoutManager(requireContext()));
+                binding.recyclerChat.setAdapter(adapter);
+            });
+        });
 
         String[] prompts = {
                 "Tháng này tôi còn bao nhiêu?",
@@ -63,10 +69,22 @@ public class AssistantFragment extends Fragment {
 
     private void sendMessage(String text) {
         messages.add(new ChatMessage(ChatMessage.ROLE_USER, text));
-        messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT,
-                MockDataRepository.getInstance().getMockAssistantReply(text)));
-        adapter.notifyDataSetChanged();
-        binding.recyclerChat.scrollToPosition(messages.size() - 1);
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+            binding.recyclerChat.scrollToPosition(messages.size() - 1);
+        }
+
+        MockDataRepository.getInstance().executeAsync(() -> {
+            String reply = MockDataRepository.getInstance().getMockAssistantReply(text);
+            MockDataRepository.getInstance().runOnMainThread(() -> {
+                if (binding == null) return;
+                messages.add(new ChatMessage(ChatMessage.ROLE_ASSISTANT, reply));
+                if (adapter != null) {
+                    adapter.notifyDataSetChanged();
+                    binding.recyclerChat.scrollToPosition(messages.size() - 1);
+                }
+            });
+        });
     }
 
     @Override

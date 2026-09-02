@@ -1,23 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
     android:orientation="vertical">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_container_lowest"
-        android:padding="16dp"
-        android:text="@string/assistant_title"
-        style="@style/TextAppearance.SoSinhVien.Title" />
+        android:background="@color/primary_container"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="20dp">
+        
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_card"
+            android:padding="8dp"
+            app:srcCompat="@android:drawable/ic_dialog_email"
+            app:tint="@color/primary" />
+            
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/assistant_title"
+            android:textColor="@color/on_primary_container"
+            style="@style/TextAppearance.SoSinhVien.Headline" />
+    </LinearLayout>
 
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="8dp">
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/layout_prompt_chips"
@@ -31,31 +50,38 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="12dp" />
+        android:paddingHorizontal="16dp"
+        android:clipToPadding="false" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_container_lowest"
+        android:background="@color/surface"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:elevation="8dp">
 
         <EditText
             android:id="@+id/edit_message"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/bg_chip_inactive"
+            android:background="@drawable/bg_card"
             android:hint="Nhập câu hỏi..."
-            android:padding="12dp" />
+            android:padding="16dp"
+            android:textColorHint="@color/on_surface_subtle" />
 
-        <com.google.android.material.button.MaterialButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/btn_send"
-            style="@style/Widget.SoSinhVien.Button.Primary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="Gửi" />
+            android:layout_marginStart="12dp"
+            app:fabSize="mini"
+            app:backgroundTint="@color/primary"
+            app:tint="@color/on_primary"
+            app:elevation="0dp"
+            app:srcCompat="@android:drawable/ic_menu_send" />
     </LinearLayout>
 </LinearLayout>

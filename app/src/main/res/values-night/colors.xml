@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary: Indigo-Violet -->
+    <color name="primary">#818CF8</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#3730A3</color>
+    <color name="on_primary_container">#E0E7FF</color>
+
+    <!-- Secondary: Teal -->
+    <color name="secondary">#2DD4BF</color>
+    <color name="on_secondary">#0F172A</color>
+    <color name="secondary_container">#0F766E</color>
+    <color name="on_secondary_container">#CCFBF1</color>
+
+    <!-- Tertiary: Purple -->
+    <color name="tertiary">#A78BFA</color>
+    <color name="on_tertiary">#0F172A</color>
+    <color name="tertiary_container">#5B21B6</color>
+    <color name="on_tertiary_container">#EDE9FE</color>
+
+    <!-- Background & Surface -->
+    <color name="background">#0F172A</color>
+    <color name="on_background">#F8FAFC</color>
+    <color name="surface">#1E293B</color>
+    <color name="on_surface">#F8FAFC</color>
+    <color name="surface_variant">#334155</color>
+    <color name="on_surface_variant">#CBD5E1</color>
+    <color name="on_surface_subtle">#94A3B8</color>
+
+    <!-- Outlines & Borders -->
+    <color name="outline">#475569</color>
+    <color name="outline_variant">#334155</color>
+
+    <!-- Semantics -->
+    <color name="success">#34D399</color>
+    <color name="on_success">#0F172A</color>
+    <color name="success_container">#065F46</color>
+    <color name="on_success_container">#D1FAE5</color>
+    
+    <color name="warning">#FBBF24</color>
+    <color name="on_warning">#0F172A</color>
+    <color name="warning_container">#92400E</color>
+    <color name="on_warning_container">#FEF3C7</color>
+    
+    <color name="danger">#F87171</color>
+    <color name="on_danger">#0F172A</color>
+    <color name="danger_container">#991B1B</color>
+    <color name="on_danger_container">#FEE2E2</color>
+</resources>

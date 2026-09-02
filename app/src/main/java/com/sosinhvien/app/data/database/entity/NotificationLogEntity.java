@@ -9,10 +9,11 @@ import androidx.room.PrimaryKey;
 
 @Entity(
     tableName = "notification_logs",
+    indices = {@androidx.room.Index("user_id")},
     foreignKeys = @ForeignKey(
         entity = UserEntity.class,
-        parentColumns = "email",
-        childColumns = "user_email",
+        parentColumns = "id",
+        childColumns = "user_id",
         onDelete = ForeignKey.CASCADE
     )
 )
@@ -21,9 +22,9 @@ public class NotificationLogEntity {
     @NonNull
     public String id;
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    public String userEmail;
+    public String userId;
 
     @NonNull
     public String title;
@@ -47,11 +48,11 @@ public class NotificationLogEntity {
     @Nullable
     public String entityId;
 
-    public NotificationLogEntity(@NonNull String id, @NonNull String userEmail, @NonNull String title,
+    public NotificationLogEntity(@NonNull String id, @NonNull String userId, @NonNull String title,
                                  @NonNull String subtitle, @NonNull String type, @NonNull String accentColor,
                                  long timestamp, boolean isRead, @Nullable String entityId) {
         this.id = id;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.title = title;
         this.subtitle = subtitle;
         this.type = type;

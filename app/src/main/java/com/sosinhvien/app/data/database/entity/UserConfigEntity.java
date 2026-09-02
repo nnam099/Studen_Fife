@@ -13,17 +13,17 @@ import com.google.gson.annotations.SerializedName;
     tableName = "user_configs",
     foreignKeys = @ForeignKey(
         entity = UserEntity.class,
-        parentColumns = "email",
-        childColumns = "user_email",
+        parentColumns = "id",
+        childColumns = "user_id",
         onDelete = ForeignKey.CASCADE
     )
 )
 public class UserConfigEntity {
     @PrimaryKey
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @ColumnInfo(name = "sleep_start_time")
     @NonNull
@@ -94,14 +94,14 @@ public class UserConfigEntity {
     @ColumnInfo(name = "is_synced", defaultValue = "0")
     public int isSynced = 0;
 
-    public UserConfigEntity(@NonNull String userEmail, @NonNull String sleepStartTime, @NonNull String sleepEndTime,
+    public UserConfigEntity(@NonNull String userId, @NonNull String sleepStartTime, @NonNull String sleepEndTime,
                             int bufferTime, int minIntervalDuration, int concentrationThreshold,
                             @Nullable String activityInterests, @Nullable String personalGoals,
                             @Nullable String unavailableHours, @Nullable String preferredHours,
                             boolean budgetAlertEnabled, @NonNull String deadlineReminderHours,
                             int eventReminderMinutes, @NonNull String recordReminderTime,
                             boolean budgetReminderEnabled) {
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.sleepStartTime = sleepStartTime;
         this.sleepEndTime = sleepEndTime;
         this.bufferTime = bufferTime;

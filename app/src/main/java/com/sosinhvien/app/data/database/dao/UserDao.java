@@ -17,6 +17,9 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     UserEntity getUserByEmail(String email);
 
+    @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
+    UserEntity getUserById(String userId);
+
     @Update
     void updateUser(UserEntity user);
 
@@ -26,6 +29,6 @@ public interface UserDao {
     @Update
     void updateConfig(UserConfigEntity config);
 
-    @Query("SELECT * FROM user_configs WHERE user_email = :email LIMIT 1")
-    UserConfigEntity getConfigByEmail(String email);
+    @Query("SELECT * FROM user_configs WHERE user_id = :userId LIMIT 1")
+    UserConfigEntity getConfigByUserId(String userId);
 }

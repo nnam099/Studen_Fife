@@ -57,10 +57,12 @@ public class LoginFragment extends Fragment {
                             if (response.isSuccessful() && response.body() != null) {
                                 com.sosinhvien.app.data.network.model.AuthModels.AuthResponse authRes = response.body();
                                 SessionManager session = new SessionManager(requireContext());
-                                session.login(authRes.email, authRes.displayName, authRes.token);
+                                session.login(authRes.userId, authRes.email, authRes.displayName, authRes.token);
 
                                 // Save user profile locally
-                                MockDataRepository.getInstance().saveUserLocally(authRes.email, authRes.displayName);
+                                MockDataRepository.getInstance().executeAsync(() -> {
+                                    MockDataRepository.getInstance().saveUserLocally(authRes.email, authRes.displayName);
+                                });
 
                                 // Trigger initial background sync
                                 com.sosinhvien.app.data.sync.SyncManager.getInstance(requireContext()).triggerSync(null);
@@ -89,18 +91,26 @@ public class LoginFragment extends Fragment {
                             btnSubmit.setEnabled(true);
 
                             // 2. Fallback to Local Authentication
-                            if (MockDataRepository.getInstance().validateLogin(email, password)) {
-                                SessionManager session = new SessionManager(requireContext());
-                                String name = MockDataRepository.getInstance().getUserDisplayName(email);
-                                session.login(email, name, ""); // local sync token is empty
+                            MockDataRepository.getInstance().executeAsync(() -> {
+                                boolean isValid = MockDataRepository.getInstance().validateLogin(email, password);
+                                if (isValid) {
+                                    String name = MockDataRepository.getInstance().getUserDisplayName(email);
+                                    String userId = MockDataRepository.getInstance().getUserIdByEmail(email);
+                                    MockDataRepository.getInstance().runOnMainThread(() -> {
+                                        SessionManager session = new SessionManager(requireContext());
+                                        session.login(userId, email, name, ""); // local sync token is empty
 
-                                Toast.makeText(requireContext(), "Đăng nhập ngoại tuyến thành công!", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(requireContext(), OnboardingActivity.class));
-                                requireActivity().finish();
-                            } else {
-                                textError.setText("Không thể kết nối máy chủ. Tài khoản ngoại tuyến không chính xác.");
-                                textError.setVisibility(View.VISIBLE);
-                            }
+                                        Toast.makeText(requireContext(), "Đăng nhập ngoại tuyến thành công!", Toast.LENGTH_SHORT).show();
+                                        startActivity(new Intent(requireContext(), OnboardingActivity.class));
+                                        requireActivity().finish();
+                                    });
+                                } else {
+                                    MockDataRepository.getInstance().runOnMainThread(() -> {
+                                        textError.setText("Không thể kết nối máy chủ. Tài khoản ngoại tuyến không chính xác.");
+                                        textError.setVisibility(View.VISIBLE);
+                                    });
+                                }
+                            });
                         }
                     });
         });

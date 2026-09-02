@@ -9,11 +9,12 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "categories",
-    primaryKeys = {"id", "user_email"},
+    primaryKeys = {"id", "user_id"},
+    indices = {@androidx.room.Index("user_id")},
     foreignKeys = @ForeignKey(
         entity = UserEntity.class,
-        parentColumns = "email",
-        childColumns = "user_email",
+        parentColumns = "id",
+        childColumns = "user_id",
         onDelete = ForeignKey.CASCADE
     )
 )
@@ -22,10 +23,10 @@ public class CategoryEntity {
     @SerializedName("id")
     public String id;
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @NonNull
     @SerializedName("name")
@@ -54,10 +55,10 @@ public class CategoryEntity {
     @SerializedName("is_deleted")
     public int isDeleted = 0;
 
-    public CategoryEntity(@NonNull String id, @NonNull String userEmail, @NonNull String name,
+    public CategoryEntity(@NonNull String id, @NonNull String userId, @NonNull String name,
                           @NonNull String iconName, boolean isDefault, boolean visible) {
         this.id = id;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.name = name;
         this.iconName = iconName;
         this.isDefault = isDefault;

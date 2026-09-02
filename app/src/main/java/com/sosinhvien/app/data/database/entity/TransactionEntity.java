@@ -11,17 +11,21 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "transactions",
+    indices = {
+        @androidx.room.Index("user_id"),
+        @androidx.room.Index(value = {"category_id", "user_id"})
+    },
     foreignKeys = {
         @ForeignKey(
             entity = UserEntity.class,
-            parentColumns = "email",
-            childColumns = "user_email",
+            parentColumns = "id",
+            childColumns = "user_id",
             onDelete = ForeignKey.CASCADE
         ),
         @ForeignKey(
             entity = CategoryEntity.class,
-            parentColumns = {"id", "user_email"},
-            childColumns = {"category_id", "user_email"},
+            parentColumns = {"id", "user_id"},
+            childColumns = {"category_id", "user_id"},
             onDelete = ForeignKey.SET_NULL
         )
     }
@@ -32,10 +36,10 @@ public class TransactionEntity {
     @SerializedName("id")
     public String id;
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @NonNull
     @SerializedName("name")
@@ -60,11 +64,6 @@ public class TransactionEntity {
     @SerializedName("timestamp")
     public long timestamp;
 
-    @ColumnInfo(name = "time_label")
-    @NonNull
-    @SerializedName("time_label")
-    public String timeLabel;
-
     @Nullable
     @SerializedName("note")
     public String notes;
@@ -82,19 +81,18 @@ public class TransactionEntity {
     @SerializedName("is_deleted")
     public int isDeleted = 0;
 
-    public TransactionEntity(@NonNull String id, @NonNull String userEmail, @NonNull String name,
+    public TransactionEntity(@NonNull String id, @NonNull String userId, @NonNull String name,
                              @Nullable String categoryId, long amount, @NonNull String type,
-                             @NonNull String source, long timestamp, @NonNull String timeLabel,
+                             @NonNull String source, long timestamp,
                              @Nullable String notes, boolean deleted) {
         this.id = id;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.name = name;
         this.categoryId = categoryId;
         this.amount = amount;
         this.type = type;
         this.source = source;
         this.timestamp = timestamp;
-        this.timeLabel = timeLabel;
         this.notes = notes;
         this.deleted = deleted;
         this.isDeleted = deleted ? 1 : 0;

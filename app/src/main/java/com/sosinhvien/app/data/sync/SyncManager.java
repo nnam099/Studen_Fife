@@ -55,20 +55,20 @@ public class SyncManager {
                     return;
                 }
 
-                String email = session.getEmail();
+                String userId = session.getUserId();
                 AppDatabase db = AppDatabase.getInstance(context);
                 SyncDao syncDao = db.syncDao();
                 ApiService api = ApiClient.getApiService(context);
 
                 // --- 1. PUSH LOCAL CHANGES TO SERVER ---
                 SyncModels.PushRequest pushReq = new SyncModels.PushRequest();
-                pushReq.categories = syncDao.getUnsyncedCategories(email);
-                pushReq.budgets = syncDao.getUnsyncedBudgets(email);
-                pushReq.categoryBudgets = syncDao.getUnsyncedCategoryBudgets(email);
-                pushReq.transactions = syncDao.getUnsyncedTransactions(email);
-                pushReq.tasks = syncDao.getUnsyncedTasks(email);
-                pushReq.calendarEvents = syncDao.getUnsyncedCalendarEvents(email);
-                pushReq.userConfig = syncDao.getUnsyncedUserConfig(email);
+                pushReq.categories = syncDao.getUnsyncedCategories(userId);
+                pushReq.budgets = syncDao.getUnsyncedBudgets(userId);
+                pushReq.categoryBudgets = syncDao.getUnsyncedCategoryBudgets(userId);
+                pushReq.transactions = syncDao.getUnsyncedTransactions(userId);
+                pushReq.tasks = syncDao.getUnsyncedTasks(userId);
+                pushReq.calendarEvents = syncDao.getUnsyncedCalendarEvents(userId);
+                pushReq.userConfig = syncDao.getUnsyncedUserConfig(userId);
 
                 boolean hasDataToPush = !pushReq.categories.isEmpty() ||
                         !pushReq.budgets.isEmpty() ||
@@ -86,30 +86,30 @@ public class SyncManager {
                         if (!pushReq.categories.isEmpty()) {
                             List<String> ids = new ArrayList<>();
                             for (CategoryEntity c : pushReq.categories) ids.add(c.id);
-                            syncDao.markCategoriesSynced(email, ids);
+                            syncDao.markCategoriesSynced(userId, ids);
                         }
                         if (!pushReq.budgets.isEmpty()) {
                             List<String> labels = new ArrayList<>();
                             for (BudgetEntity b : pushReq.budgets) labels.add(b.monthLabel);
-                            syncDao.markBudgetsSynced(email, labels);
+                            syncDao.markBudgetsSynced(userId, labels);
                         }
                         if (!pushReq.transactions.isEmpty()) {
                             List<String> ids = new ArrayList<>();
                             for (TransactionEntity t : pushReq.transactions) ids.add(t.id);
-                            syncDao.markTransactionsSynced(email, ids);
+                            syncDao.markTransactionsSynced(userId, ids);
                         }
                         if (!pushReq.tasks.isEmpty()) {
                             List<String> ids = new ArrayList<>();
                             for (TaskEntity t : pushReq.tasks) ids.add(t.id);
-                            syncDao.markTasksSynced(email, ids);
+                            syncDao.markTasksSynced(userId, ids);
                         }
                         if (!pushReq.calendarEvents.isEmpty()) {
                             List<String> ids = new ArrayList<>();
                             for (CalendarEventEntity e : pushReq.calendarEvents) ids.add(e.id);
-                            syncDao.markCalendarEventsSynced(email, ids);
+                            syncDao.markCalendarEventsSynced(userId, ids);
                         }
                         if (pushReq.userConfig != null) {
-                            syncDao.markUserConfigSynced(email);
+                            syncDao.markUserConfigSynced(userId);
                         }
                         Log.d(TAG, "Push hoàn thành.");
                     } else {

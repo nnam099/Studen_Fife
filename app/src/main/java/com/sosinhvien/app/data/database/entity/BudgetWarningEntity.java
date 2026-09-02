@@ -7,11 +7,12 @@ import androidx.room.ForeignKey;
 
 @Entity(
     tableName = "budget_warning_flags",
-    primaryKeys = {"month_label", "category_id", "user_email"},
+    primaryKeys = {"month_label", "category_id", "user_id"},
+    indices = {@androidx.room.Index("user_id")},
     foreignKeys = @ForeignKey(
         entity = UserEntity.class,
-        parentColumns = "email",
-        childColumns = "user_email",
+        parentColumns = "id",
+        childColumns = "user_id",
         onDelete = ForeignKey.CASCADE
     )
 )
@@ -24,9 +25,9 @@ public class BudgetWarningEntity {
     @NonNull
     public String categoryId; // 'total' for total budget warning
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    public String userEmail;
+    public String userId;
 
     @ColumnInfo(name = "alerted_80")
     public boolean alerted80;
@@ -34,11 +35,11 @@ public class BudgetWarningEntity {
     @ColumnInfo(name = "alerted_100")
     public boolean alerted100;
 
-    public BudgetWarningEntity(@NonNull String monthLabel, @NonNull String categoryId, @NonNull String userEmail,
+    public BudgetWarningEntity(@NonNull String monthLabel, @NonNull String categoryId, @NonNull String userId,
                                boolean alerted80, boolean alerted100) {
         this.monthLabel = monthLabel;
         this.categoryId = categoryId;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.alerted80 = alerted80;
         this.alerted100 = alerted100;
     }

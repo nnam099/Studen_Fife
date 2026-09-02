@@ -11,11 +11,15 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "calendar_events",
+    indices = {
+        @androidx.room.Index("user_id"),
+        @androidx.room.Index("task_id")
+    },
     foreignKeys = {
         @ForeignKey(
             entity = UserEntity.class,
-            parentColumns = "email",
-            childColumns = "user_email",
+            parentColumns = "id",
+            childColumns = "user_id",
             onDelete = ForeignKey.CASCADE
         ),
         @ForeignKey(
@@ -38,10 +42,10 @@ public class CalendarEventEntity {
     @SerializedName("id")
     public String id;
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @NonNull
     @SerializedName("title")
@@ -110,7 +114,7 @@ public class CalendarEventEntity {
     @SerializedName("is_deleted")
     public int isDeleted = 0;
 
-    public CalendarEventEntity(@NonNull String id, @NonNull String userEmail, @NonNull String title,
+    public CalendarEventEntity(@NonNull String id, @NonNull String userId, @NonNull String title,
                                long startTime, long endTime, @NonNull String type,
                                @Nullable String priority, @Nullable String taskId,
                                @Nullable String sessionStatus, @Nullable Integer sessionActualDuration,
@@ -118,7 +122,7 @@ public class CalendarEventEntity {
                                @Nullable Long recurrenceEndDate, @Nullable String parentEventId,
                                boolean deleted) {
         this.id = id;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.title = title;
         this.startTime = startTime;
         this.endTime = endTime;

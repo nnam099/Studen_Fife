@@ -1,64 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/statistics"
-        style="@style/TextAppearance.SoSinhVien.Headline" />
-
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        style="@style/Widget.SoSinhVien.Card">
+        android:orientation="vertical"
+        android:padding="24dp">
 
-        <LinearLayout
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="@string/statistics"
+            style="@style/TextAppearance.SoSinhVien.Headline" />
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_marginBottom="24dp"
+            style="@style/Widget.SoSinhVien.Card">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chi theo danh mục (Tháng 10)"
-                style="@style/TextAppearance.SoSinhVien.Title" />
+                android:orientation="vertical"
+                android:padding="24dp">
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Ăn uống — 45% (1.012.500 đ)" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Di chuyển — 25% (562.500 đ)" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Học tập — 15% (337.500 đ)" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Giải trí — 10% (225.000 đ)" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Khác — 5% (112.500 đ)" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:id="@+id/text_category_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chi theo danh mục"
+                    style="@style/TextAppearance.SoSinhVien.Title" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        style="@style/Widget.SoSinhVien.Card">
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/chart_category"
+                    android:layout_width="match_parent"
+                    android:layout_height="240dp"
+                    android:layout_marginTop="16dp" />
 
-        <LinearLayout
+                <!-- Legacy layout for fallback/text details -->
+                <LinearLayout
+                    android:id="@+id/layout_category_stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_marginBottom="24dp"
+            style="@style/Widget.SoSinhVien.Card">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Mua nhiều nhất"
-                style="@style/TextAppearance.SoSinhVien.Title" />
+                android:orientation="vertical"
+                android:padding="24dp">
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="1. Cơm trưa — 12 lần" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2. Grab — 8 lần" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3. Cà phê — 6 lần" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-</LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tốn nhiều nhất"
+                    style="@style/TextAppearance.SoSinhVien.Title" />
+
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/chart_top_spent"
+                    android:layout_width="match_parent"
+                    android:layout_height="240dp"
+                    android:layout_marginTop="16dp" />
+
+                <!-- Legacy layout -->
+                <LinearLayout
+                    android:id="@+id/layout_top_spent_products"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            style="@style/Widget.SoSinhVien.Card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mua nhiều nhất (Số lượng)"
+                    style="@style/TextAppearance.SoSinhVien.Title" />
+
+                <!-- Legacy layout -->
+                <LinearLayout
+                    android:id="@+id/layout_top_products"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -17,11 +17,22 @@
             android:text="@string/ocr_confirm"
             style="@style/TextAppearance.SoSinhVien.Headline" />
 
-        <View
+        <ImageView
+            android:id="@+id/img_receipt"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_height="200dp"
             android:layout_marginTop="16dp"
+            android:scaleType="centerCrop"
             android:background="@color/surface_variant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_pick_image"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="Chọn ảnh hóa đơn" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -38,21 +49,24 @@
             android:hint="Tổng tiền">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_ocr_amount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="45.000" />
+                android:inputType="number"
+                android:text="" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Tên cửa hàng">
+            android:hint="Tên cửa hàng / Sản phẩm">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_ocr_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Highlands Coffee" />
+                android:text="" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout

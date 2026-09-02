@@ -11,15 +11,17 @@ public class CalendarEvent {
     private final String type;
     private final String priority; // null for non-task
     private final boolean completed;
+    private final boolean overdue;
 
     public CalendarEvent(String id, String title, String timeRange, String type,
-                         String priority, boolean completed) {
+                         String priority, boolean completed, boolean overdue) {
         this.id = id;
         this.title = title;
         this.timeRange = timeRange;
         this.type = type;
         this.priority = priority;
         this.completed = completed;
+        this.overdue = overdue;
     }
 
     public String getId() {
@@ -44,5 +46,9 @@ public class CalendarEvent {
 
     public boolean isCompleted() {
         return completed;
+    }
+
+    public boolean isOverdue() {
+        return overdue;
     }
 }

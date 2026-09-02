@@ -9,11 +9,12 @@ import com.google.gson.annotations.SerializedName;
 
 @Entity(
     tableName = "budgets",
-    primaryKeys = {"month_label", "user_email"},
+    primaryKeys = {"month_label", "user_id"},
+    indices = {@androidx.room.Index("user_id")},
     foreignKeys = @ForeignKey(
         entity = UserEntity.class,
-        parentColumns = "email",
-        childColumns = "user_email",
+        parentColumns = "id",
+        childColumns = "user_id",
         onDelete = ForeignKey.CASCADE
     )
 )
@@ -23,10 +24,10 @@ public class BudgetEntity {
     @SerializedName("month_label")
     public String monthLabel; // Format: YYYY-MM
 
-    @ColumnInfo(name = "user_email")
+    @ColumnInfo(name = "user_id")
     @NonNull
-    @SerializedName("user_email")
-    public String userEmail;
+    @SerializedName("user_id")
+    public String userId;
 
     @ColumnInfo(name = "total_budget")
     @SerializedName("total_budget")
@@ -47,9 +48,9 @@ public class BudgetEntity {
     @SerializedName("is_deleted")
     public int isDeleted = 0;
 
-    public BudgetEntity(@NonNull String monthLabel, @NonNull String userEmail, long totalBudget, long openingBalance) {
+    public BudgetEntity(@NonNull String monthLabel, @NonNull String userId, long totalBudget, long openingBalance) {
         this.monthLabel = monthLabel;
-        this.userEmail = userEmail;
+        this.userId = userId;
         this.totalBudget = totalBudget;
         this.openingBalance = openingBalance;
     }
