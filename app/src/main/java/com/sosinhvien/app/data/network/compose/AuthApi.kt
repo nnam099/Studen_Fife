@@ -4,8 +4,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.GET
+import retrofit2.http.PATCH
+import retrofit2.http.Path
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import com.sosinhvien.app.data.auth.TokenStore
 
 interface AuthApi {
     @POST("auth/register")
@@ -16,6 +20,36 @@ interface AuthApi {
 
     @POST("auth/refresh")
     suspend fun refresh(request: RefreshRequest): AuthResponse
+
+    @GET("academic-terms")
+    suspend fun academicTerms(): List<AcademicTermResponse>
+
+    @POST("academic-terms")
+    suspend fun createAcademicTerm(request: CreateAcademicTermRequest): AcademicTermResponse
+
+    @GET("categories")
+    suspend fun categories(): List<CategoryResponse>
+
+    @POST("categories")
+    suspend fun createCategory(request: CreateCategoryRequest): CategoryResponse
+
+    @GET("budgets")
+    suspend fun budgets(): List<BudgetResponse>
+
+    @POST("budgets")
+    suspend fun createBudget(request: CreateBudgetRequest): BudgetResponse
+
+    @GET("transactions")
+    suspend fun transactions(): List<TransactionResponse>
+
+    @POST("transactions")
+    suspend fun createTransaction(request: CreateTransactionRequest): TransactionResponse
+
+    @GET("milestones")
+    suspend fun milestones(): List<MilestoneResponse>
+
+    @POST("milestones")
+    suspend fun createMilestone(request: CreateMilestoneRequest): MilestoneResponse
 }
 
 data class RegisterRequest(
@@ -45,12 +79,53 @@ data class AuthUser(
     val fullName: String,
 )
 
+data class CreateAcademicTermRequest(val name: String, val startDate: String, val endDate: String)
+data class AcademicTermResponse(val id: String, val name: String, val startDate: String, val endDate: String, val status: String)
+data class CreateCategoryRequest(val name: String, val type: String = "expense", val color: String? = null)
+data class CategoryResponse(val id: String, val name: String, val type: String, val color: String?)
+data class CreateBudgetRequest(
+    val amount: Double,
+    val periodType: String,
+    val startDate: String,
+    val endDate: String,
+    val currency: String,
+    val academicTermId: String,
+    val categoryId: String,
+)
+data class BudgetResponse(val id: String, val amount: String, val periodType: String, val currency: String)
+data class CreateTransactionRequest(
+    val amount: Double,
+    val type: String,
+    val description: String,
+    val occurredAt: String,
+    val categoryId: String,
+    val academicTermId: String,
+    val milestoneId: String? = null,
+)
+data class TransactionResponse(val id: String, val amount: String, val type: String, val description: String, val occurredAt: String)
+data class CreateMilestoneRequest(
+    val title: String,
+    val description: String? = null,
+    val dueDate: String,
+    val type: String,
+    val priority: Int = 1,
+    val academicTermId: String,
+)
+data class MilestoneResponse(val id: String, val title: String, val dueDate: String, val type: String, val isCompleted: Boolean, val priority: Int)
+
 object AuthApiFactory {
-    fun create(): AuthApi {
+    fun create(tokenStore: TokenStore): AuthApi {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BASIC
         }
         val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val token = tokenStore.accessToken()
+                val request = chain.request().newBuilder().apply {
+                    if (!token.isNullOrBlank()) addHeader("Authorization", "Bearer $token")
+                }.build()
+                chain.proceed(request)
+            }
             .addInterceptor(logging)
             .build()
 
