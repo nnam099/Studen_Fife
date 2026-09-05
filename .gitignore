@@ -12,16 +12,6 @@
 *.aab
 output.json
 
-# Backend dependencies and generated output
-backend/node_modules/
-backend/dist/
-backend/postgres_data/
-backend/.env
-backend/coverage/
-
-# Android generated output
-app/build/
-
 # Gradle
 .gradle
 **/build/
@@ -32,3 +22,13 @@ app/build/
 
 # Local
 local.properties
+
+# Backend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+postgres_data/
+**/postgres_data/
+.env
+
