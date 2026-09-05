@@ -80,4 +80,47 @@ export class TransactionsService {
     await this.repository.remove(transaction);
     return { deleted: true, id };
   }
+
+  async getReport(userId: string) {
+    const transactions = await this.findAll(userId);
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    let totalExpenses = 0;
+    let weeklyExpenses = 0;
+    const categoryTotals: Record<string, { categoryId: string; categoryName: string; totalAmount: number }> = {};
+
+    for (const tx of transactions) {
+      const amount = Number(tx.amount) || 0;
+      if (tx.type === 'expense') {
+        totalExpenses += amount;
+        const occurred = new Date(tx.occurredAt);
+        if (occurred >= sevenDaysAgo && occurred <= now) {
+          weeklyExpenses += amount;
+        }
+
+        const catId = tx.category?.id || 'uncategorized';
+        const catName = tx.category?.name || 'Khác';
+        if (!categoryTotals[catId]) {
+          categoryTotals[catId] = { categoryId: catId, categoryName: catName, totalAmount: 0 };
+        }
+        categoryTotals[catId].totalAmount += amount;
+      }
+    }
+
+    const topCategories = Object.values(categoryTotals)
+      .map((c) => ({
+        ...c,
+        percentage: totalExpenses > 0 ? Math.round((c.totalAmount / totalExpenses) * 100) : 0,
+      }))
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+
+    return {
+      totalExpenses,
+      weeklyExpenses,
+      transactionCount: transactions.length,
+      topCategories,
+    };
+  }
 }
+
