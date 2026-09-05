@@ -52,12 +52,11 @@ export class AlertsService {
   }
 
   async checkBudgetAlerts(userId: string, academicTermId: string, categoryId: string, transactionDate: Date) {
-    // 1. Find all active budgets for user, category, and matching date range
+    // 1. Find all active budgets for user and category matching date range
     const budgets = await this.budgetRepo.find({
       where: {
         user: { id: userId },
         category: { id: categoryId },
-        academicTerm: { id: academicTermId },
         startDate: LessThanOrEqual(transactionDate),
         endDate: MoreThanOrEqual(transactionDate),
       },
@@ -71,7 +70,6 @@ export class AlertsService {
       const qb = this.txRepo.createQueryBuilder('tx')
         .where('tx.user_id = :userId', { userId })
         .andWhere('tx.category_id = :categoryId', { categoryId })
-        .andWhere('tx.academic_term_id = :academicTermId', { academicTermId })
         .andWhere('tx.type = :type', { type: 'expense' })
         .andWhere('tx.occurred_at >= :startDate', { startDate: budget.startDate })
         .andWhere('tx.occurred_at <= :endDate', { endDate: budget.endDate });
@@ -87,20 +85,20 @@ export class AlertsService {
         const severity: 'warning' | 'critical' = totalExpenses >= budgetAmount * 1.2 ? 'critical' : 'warning';
 
         // 4. Find nearest milestone within 7 days in the same academic term
-        const now = new Date();
-        const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const txTime = new Date(transactionDate).getTime();
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
         const milestones = await this.milestoneRepo.find({
           where: {
             user: { id: userId },
-            academicTerm: { id: academicTermId },
+            academicTerm: { id: budget.academicTerm?.id || academicTermId },
           },
           order: { dueDate: 'ASC' },
         });
 
         const nearestMilestone = milestones.find((m) => {
-          const due = new Date(m.dueDate);
-          return due >= now && due <= sevenDaysAhead;
-        }) || milestones[0] || null;
+          const dueTime = new Date(m.dueDate).getTime();
+          return dueTime >= txTime - (24 * 60 * 60 * 1000) && dueTime <= txTime + sevenDaysMs;
+        }) || null;
 
         const periodLabel = budget.periodType === 'weekly' ? 'tuần' : budget.periodType === 'monthly' ? 'tháng' : 'học kỳ';
 
@@ -116,18 +114,18 @@ export class AlertsService {
         if (!alert) {
           alert = this.alertRepo.create({
             user: { id: userId } as any,
-            academicTerm: { id: academicTermId } as any,
+            academicTerm: { id: budget.academicTerm?.id || academicTermId } as any,
             budget,
             milestone: nearestMilestone,
             type: 'budget_warning',
             title: `Cảnh báo vượt ngân sách ${periodLabel}`,
-            message: `Ngân sách ${periodLabel} danh mục "${budget.category.name}" đã chi ${totalExpenses.toLocaleString('vi-VN')} / ${budgetAmount.toLocaleString('vi-VN')} VNĐ, vượt ${exceededAmount.toLocaleString('vi-VN')} VNĐ (${exceededPercent}%).`,
+            message: `Ngân sách ${periodLabel} (ID: ${budget.id}) danh mục "${budget.category.name}" đã chi ${totalExpenses.toLocaleString('vi-VN')} / ${budgetAmount.toLocaleString('vi-VN')} VNĐ, vượt ${exceededAmount.toLocaleString('vi-VN')} VNĐ (${exceededPercent}%).`,
             severity,
             status: 'unread',
             triggeredAt: new Date(),
           });
         } else {
-          alert.message = `Ngân sách ${periodLabel} danh mục "${budget.category.name}" đã chi ${totalExpenses.toLocaleString('vi-VN')} / ${budgetAmount.toLocaleString('vi-VN')} VNĐ, vượt ${exceededAmount.toLocaleString('vi-VN')} VNĐ (${exceededPercent}%).`;
+          alert.message = `Ngân sách ${periodLabel} (ID: ${budget.id}) danh mục "${budget.category.name}" đã chi ${totalExpenses.toLocaleString('vi-VN')} / ${budgetAmount.toLocaleString('vi-VN')} VNĐ, vượt ${exceededAmount.toLocaleString('vi-VN')} VNĐ (${exceededPercent}%).`;
           alert.severity = severity;
           alert.triggeredAt = new Date();
           if (nearestMilestone) alert.milestone = nearestMilestone;
