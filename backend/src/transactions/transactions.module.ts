@@ -8,8 +8,10 @@ import { Milestone } from '../milestones/entities/milestone.entity';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 
+import { AlertsModule } from '../alerts/alerts.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, AcademicTerm, Category, Milestone]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Transaction, AcademicTerm, Category, Milestone]), AuthModule, AlertsModule],
   controllers: [TransactionsController],
   providers: [TransactionsService],
 })

@@ -8,6 +8,8 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
 
+import { AlertsService } from '../alerts/alerts.service';
+
 @Injectable()
 export class TransactionsService {
   constructor(
@@ -15,6 +17,7 @@ export class TransactionsService {
     @InjectRepository(AcademicTerm) private readonly terms: Repository<AcademicTerm>,
     @InjectRepository(Category) private readonly categories: Repository<Category>,
     @InjectRepository(Milestone) private readonly milestones: Repository<Milestone>,
+    private readonly alertsService: AlertsService,
   ) {}
 
   findAll(userId: string) {
@@ -36,7 +39,7 @@ export class TransactionsService {
     if (!term) throw new NotFoundException('Academic term not found');
     if (!category) throw new NotFoundException('Category not found');
     if (dto.milestoneId && !milestone) throw new NotFoundException('Milestone not found');
-    return this.repository.save(this.repository.create({
+    const savedTx = await this.repository.save(this.repository.create({
       amount: dto.amount,
       type: dto.type,
       description: dto.description,
@@ -46,6 +49,11 @@ export class TransactionsService {
       category,
       milestone,
     }));
+
+    if (savedTx.type === 'expense') {
+      await this.alertsService.checkBudgetAlerts(userId, term.id, category.id, savedTx.occurredAt);
+    }
+    return savedTx;
   }
 
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
@@ -72,7 +80,12 @@ export class TransactionsService {
     delete (transaction as any).categoryId;
     delete (transaction as any).academicTermId;
     delete (transaction as any).milestoneId;
-    return this.repository.save(transaction);
+    const updatedTx = await this.repository.save(transaction);
+
+    if (updatedTx.type === 'expense' && updatedTx.academicTerm && updatedTx.category) {
+      await this.alertsService.checkBudgetAlerts(userId, updatedTx.academicTerm.id, updatedTx.category.id, updatedTx.occurredAt);
+    }
+    return updatedTx;
   }
 
   async remove(userId: string, id: string) {
