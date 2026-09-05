@@ -56,6 +56,15 @@ interface AuthApi {
 
     @POST("milestones")
     suspend fun createMilestone(request: CreateMilestoneRequest): MilestoneResponse
+
+    @GET("alerts")
+    suspend fun alerts(@retrofit2.http.Query("status") status: String? = null): List<AlertResponse>
+
+    @PATCH("alerts/{id}/read")
+    suspend fun markAlertRead(@Path("id") id: String): AlertResponse
+
+    @PATCH("alerts/{id}/dismiss")
+    suspend fun markAlertDismissed(@Path("id") id: String): AlertResponse
 }
 
 data class ReportResponse(
@@ -134,6 +143,17 @@ data class CreateMilestoneRequest(
     val academicTermId: String,
 )
 data class MilestoneResponse(val id: String, val title: String, val dueDate: String, val type: String, val isCompleted: Boolean, val priority: Int)
+data class AlertResponse(
+    val id: String,
+    val type: String,
+    val title: String,
+    val message: String,
+    val severity: String,
+    val status: String,
+    val triggeredAt: String,
+    val budget: BudgetResponse? = null,
+    val milestone: MilestoneResponse? = null,
+)
 
 object AuthApiFactory {
     fun create(tokenStore: TokenStore): AuthApi {

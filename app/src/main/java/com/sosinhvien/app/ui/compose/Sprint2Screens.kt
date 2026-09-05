@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.sosinhvien.app.data.auth.AuthRepository
 import com.sosinhvien.app.data.network.compose.AcademicTermResponse
+import com.sosinhvien.app.data.network.compose.AlertResponse
 import com.sosinhvien.app.data.network.compose.BudgetResponse
 import com.sosinhvien.app.data.network.compose.CategoryResponse
 import com.sosinhvien.app.data.network.compose.CreateBudgetRequest
@@ -210,17 +211,26 @@ fun HomeScreen(repository: AuthRepository, navController: NavHostController) {
     var budgets by remember { mutableStateOf<List<BudgetResponse>>(emptyList()) }
     var transactions by remember { mutableStateOf<List<TransactionResponse>>(emptyList()) }
     var milestones by remember { mutableStateOf<List<MilestoneResponse>>(emptyList()) }
+    var alerts by remember { mutableStateOf<List<AlertResponse>>(emptyList()) }
     var report by remember { mutableStateOf<ReportResponse?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    val refreshData: () -> Unit = {
+        scope.launch {
+            runCatching {
+                terms = repository.academicTerms()
+                budgets = repository.budgets()
+                transactions = repository.transactions()
+                milestones = repository.milestones()
+                alerts = repository.alerts()
+                report = repository.report()
+            }.onFailure { message = errorMessage(it) }
+        }
+    }
 
     LaunchedEffect(Unit) {
-        runCatching {
-            terms = repository.academicTerms()
-            budgets = repository.budgets()
-            transactions = repository.transactions()
-            milestones = repository.milestones()
-            report = repository.report()
-        }.onFailure { message = errorMessage(it) }
+        refreshData()
     }
 
     SprintShell(navController, "Home / Dashboard", "home") {
@@ -231,6 +241,21 @@ fun HomeScreen(repository: AuthRepository, navController: NavHostController) {
                 buttonText = "Tạo học kỳ ngay",
                 onClick = { navController.navigate("onboarding") }
             )
+        }
+
+        // Active Warning Banner (Unread / New Alerts)
+        val activeAlerts = alerts.filter { it.status == "unread" || it.status == "new" }
+        if (activeAlerts.isNotEmpty()) {
+            val topAlert = activeAlerts.first()
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("⚠️ Báo động vượt ngân sách (${activeAlerts.size} thông báo mới)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                    Text(topAlert.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                }
+            }
         }
 
         // Summary Cards Grid
@@ -267,6 +292,81 @@ fun HomeScreen(repository: AuthRepository, navController: NavHostController) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text("${(progress * 100).toInt()}% đã tiêu dùng", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+
+        // Real Alerts Section
+        Text("Cảnh báo vượt ngân sách (${alerts.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        if (alerts.isEmpty()) {
+            Text("Chưa có cảnh báo ngân sách nào.", style = MaterialTheme.typography.bodySmall)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                alerts.forEach { alertItem ->
+                    val isUnread = alertItem.status == "unread" || alertItem.status == "new"
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isUnread) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Text(alertItem.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                                Surface(
+                                    color = if (alertItem.severity == "critical") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "${alertItem.severity.uppercase()} · ${alertItem.status.uppercase()}",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Text(alertItem.message, style = MaterialTheme.typography.bodySmall)
+                            if (alertItem.milestone != null) {
+                                Text("🎯 Mốc liên quan: ${alertItem.milestone.title} (${alertItem.milestone.dueDate})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                            if (alertItem.budget != null) {
+                                Text("📊 Loại ngân sách: ${alertItem.budget.periodType}", style = MaterialTheme.typography.labelSmall)
+                            }
+
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                                if (isUnread) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            scope.launch {
+                                                runCatching {
+                                                    repository.markAlertRead(alertItem.id)
+                                                    refreshData()
+                                                }.onFailure { message = errorMessage(it) }
+                                            }
+                                        },
+                                        modifier = Modifier.padding(end = 6.dp)
+                                    ) {
+                                        Text("Đánh dấu đã đọc", fontSize = 11.sp)
+                                    }
+                                }
+                                if (alertItem.status != "dismissed") {
+                                    Button(
+                                        onClick = {
+                                            scope.launch {
+                                                runCatching {
+                                                    repository.markAlertDismissed(alertItem.id)
+                                                    refreshData()
+                                                }.onFailure { message = errorMessage(it) }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                    ) {
+                                        Text("Bỏ qua", fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
