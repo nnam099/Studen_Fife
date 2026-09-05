@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AcademicTerm } from '../academic-terms/entities/academic-term.entity';
 import { Category } from '../categories/entities/category.entity';
+import { Transaction } from '../transactions/entities/transaction.entity';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { Budget } from './entities/budget.entity';
@@ -13,6 +14,7 @@ export class BudgetsService {
     @InjectRepository(Budget) private readonly repository: Repository<Budget>,
     @InjectRepository(AcademicTerm) private readonly terms: Repository<AcademicTerm>,
     @InjectRepository(Category) private readonly categories: Repository<Category>,
+    @InjectRepository(Transaction) private readonly transactions: Repository<Transaction>,
   ) {}
 
   findAll(userId: string) {
@@ -70,6 +72,18 @@ export class BudgetsService {
 
   async remove(userId: string, id: string) {
     const budget = await this.findOne(userId, id);
+    if (budget.category && budget.academicTerm) {
+      const count = await this.transactions.count({
+        where: {
+          user: { id: userId },
+          category: { id: budget.category.id },
+          academicTerm: { id: budget.academicTerm.id },
+        },
+      });
+      if (count > 0) {
+        throw new BadRequestException('Không thể xóa ngân sách đang có giao dịch phát sinh. Vui lòng chuyển hoặc xóa các giao dịch trước.');
+      }
+    }
     await this.repository.remove(budget);
     return { deleted: true, id };
   }
@@ -78,3 +92,4 @@ export class BudgetsService {
     if (new Date(endDate) < new Date(startDate)) throw new BadRequestException('endDate must be on or after startDate');
   }
 }
+

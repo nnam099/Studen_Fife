@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -24,26 +24,30 @@ import { Subscription } from './subscriptions/entities/subscription.entity';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', '.env.local'] }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT || 5432),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'student_finance',
-      entities: [
-        User,
-        AcademicTerm,
-        Category,
-        Budget,
-        Transaction,
-        Milestone,
-        Alert,
-        Subscription,
-      ],
-      synchronize: false,
-      migrations: ['dist/migrations/*.js'],
-      logging: process.env.NODE_ENV !== 'production',
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST', 'localhost'),
+        port: configService.get<number>('DB_PORT', 5432),
+        username: configService.get<string>('DB_USERNAME', 'postgres'),
+        password: configService.get<string>('DB_PASSWORD', 'postgres'),
+        database: configService.get<string>('DB_NAME', 'student_finance'),
+        entities: [
+          User,
+          AcademicTerm,
+          Category,
+          Budget,
+          Transaction,
+          Milestone,
+          Alert,
+          Subscription,
+        ],
+        synchronize: false,
+        migrations: ['dist/migrations/*.js'],
+        logging: configService.get<string>('NODE_ENV') !== 'production',
+      }),
     }),
     AuthModule,
     UsersModule,
