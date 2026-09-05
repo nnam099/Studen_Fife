@@ -129,13 +129,20 @@ Please set the JAVA_HOME variable in your environment to match the
 location of your Java installation."
     fi
 else
-    JAVACMD=java
-    if ! command -v java >/dev/null 2>&1
-    then
-        die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+    JAVACMD=
+    for candidate in /usr/lib/jvm/*/bin/java "$HOME"/.jdks/*/bin/java; do
+        if [ -x "$candidate" ] && "$candidate" -version 2>&1 | grep -q 'version "17\.'; then
+            JAVACMD=$candidate
+            break
+        fi
+    done
+    if [ -z "$JAVACMD" ] && command -v java >/dev/null 2>&1; then
+        JAVACMD=java
+    fi
+    if [ -z "$JAVACMD" ]; then
+        die "ERROR: JAVA_HOME is not set and no Java 17 installation could be found.
 
-Please set the JAVA_HOME variable in your environment to match the
-location of your Java installation."
+Please install JDK 17 or set JAVA_HOME to a Java 17 installation."
     fi
 fi
 

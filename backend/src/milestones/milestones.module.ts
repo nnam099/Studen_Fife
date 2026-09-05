@@ -1,0 +1,14 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Milestone } from './entities/milestone.entity';
+import { AuthModule } from '../auth/auth.module';
+import { AcademicTerm } from '../academic-terms/entities/academic-term.entity';
+import { MilestonesController } from './milestones.controller';
+import { MilestonesService } from './milestones.service';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Milestone, AcademicTerm]), AuthModule],
+  controllers: [MilestonesController],
+  providers: [MilestonesService],
+})
+export class MilestonesModule {}

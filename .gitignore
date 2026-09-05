@@ -22,3 +22,13 @@ output.json
 
 # Local
 local.properties
+
+# Backend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+postgres_data/
+**/postgres_data/
+.env
+
