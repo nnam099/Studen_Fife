@@ -48,6 +48,9 @@ interface AuthApi {
     @POST("transactions")
     suspend fun createTransaction(request: CreateTransactionRequest): TransactionResponse
 
+    @GET("transactions/report")
+    suspend fun report(): ReportResponse
+
     @GET("milestones")
     suspend fun milestones(): List<MilestoneResponse>
 
@@ -55,7 +58,22 @@ interface AuthApi {
     suspend fun createMilestone(request: CreateMilestoneRequest): MilestoneResponse
 }
 
+data class ReportResponse(
+    val totalExpenses: Double = 0.0,
+    val weeklyExpenses: Double = 0.0,
+    val transactionCount: Int = 0,
+    val topCategories: List<CategorySpending> = emptyList(),
+)
+
+data class CategorySpending(
+    val categoryId: String,
+    val categoryName: String,
+    val totalAmount: Double,
+    val percentage: Int,
+)
+
 data class RegisterRequest(
+
     val email: String,
     val password: String,
     val fullName: String,
