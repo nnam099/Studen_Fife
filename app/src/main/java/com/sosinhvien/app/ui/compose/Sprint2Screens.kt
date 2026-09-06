@@ -223,7 +223,7 @@ fun HomeScreen(repository: AuthRepository, navController: NavHostController) {
                 budgets = repository.budgets()
                 transactions = repository.transactions()
                 milestones = repository.milestones()
-                alerts = repository.alerts()
+                alerts = repository.alerts().filter { it.status != "dismissed" }
                 report = repository.report()
             }.onFailure { message = errorMessage(it) }
         }
@@ -339,8 +339,8 @@ fun HomeScreen(repository: AuthRepository, navController: NavHostController) {
                                         onClick = {
                                             scope.launch {
                                                 runCatching {
-                                                    repository.markAlertRead(alertItem.id)
-                                                    refreshData()
+                                                    val updated = repository.markAlertRead(alertItem.id)
+                                                    alerts = alerts.map { if (it.id == updated.id) updated else it }
                                                 }.onFailure { message = errorMessage(it) }
                                             }
                                         },
@@ -355,7 +355,7 @@ fun HomeScreen(repository: AuthRepository, navController: NavHostController) {
                                             scope.launch {
                                                 runCatching {
                                                     repository.markAlertDismissed(alertItem.id)
-                                                    refreshData()
+                                                    alerts = alerts.filter { it.id != alertItem.id }
                                                 }.onFailure { message = errorMessage(it) }
                                             }
                                         },
