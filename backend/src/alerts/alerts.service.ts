@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { Budget } from '../budgets/entities/budget.entity';
 import { Milestone } from '../milestones/entities/milestone.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
@@ -16,6 +16,9 @@ export class AlertsService {
   ) {}
 
   async findAll(userId: string, status?: string) {
+    if (status && !['unread', 'new', 'read', 'dismissed'].includes(status)) {
+      throw new BadRequestException('Invalid alert status');
+    }
     const whereClause: any = { user: { id: userId } };
     if (status) {
       if (status === 'unread') {
@@ -37,7 +40,7 @@ export class AlertsService {
       relations: ['academicTerm', 'budget', 'milestone'],
     });
     if (!alert) throw new NotFoundException('Alert not found');
-    alert.status = 'read';
+    if (alert.status !== 'dismissed') alert.status = 'read';
     return this.alertRepo.save(alert);
   }
 
@@ -51,91 +54,59 @@ export class AlertsService {
     return this.alertRepo.save(alert);
   }
 
-  async checkBudgetAlerts(userId: string, academicTermId: string, categoryId: string, transactionDate: Date) {
-    // 1. Find all active budgets for user and category matching date range
-    const budgets = await this.budgetRepo.find({
-      where: {
-        user: { id: userId },
-        category: { id: categoryId },
-        startDate: LessThanOrEqual(transactionDate),
-        endDate: MoreThanOrEqual(transactionDate),
-      },
-      relations: ['category', 'academicTerm'],
-    });
-
-    const generatedAlerts: Alert[] = [];
-
+  // Budgets have no status column: active means today's date is inside the
+  // inclusive budget window and the owning academic term is active.
+  async checkBudgetAlerts(userId: string, manager: EntityManager) {
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
+    const budgets = await manager.getRepository(Budget).createQueryBuilder('budget')
+      .innerJoinAndSelect('budget.academicTerm', 'term')
+      .innerJoinAndSelect('budget.category', 'category')
+      .where('budget.user_id = :userId', { userId })
+      .andWhere('term.status = :status', { status: 'active' })
+      .andWhere(':today BETWEEN budget.start_date AND budget.end_date', { today })
+      .orderBy('budget.id', 'ASC')
+      .getMany();
+    const alerts = manager.getRepository(Alert);
     for (const budget of budgets) {
-      // 2. Sum expenses in budget timeframe
-      const qb = this.txRepo.createQueryBuilder('tx')
+      const result = await manager.getRepository(Transaction).createQueryBuilder('tx')
+        .select('COALESCE(SUM(tx.amount), 0)', 'total')
         .where('tx.user_id = :userId', { userId })
-        .andWhere('tx.category_id = :categoryId', { categoryId })
+        .andWhere('tx.academic_term_id = :termId', { termId: budget.academicTerm.id })
+        .andWhere('tx.category_id = :categoryId', { categoryId: budget.category.id })
         .andWhere('tx.type = :type', { type: 'expense' })
-        .andWhere('tx.occurred_at >= :startDate', { startDate: budget.startDate })
-        .andWhere('tx.occurred_at <= :endDate', { endDate: budget.endDate });
-
-      const res = await qb.select('SUM(tx.amount)', 'total').getRawOne();
-      const totalExpenses = Number(res?.total) || 0;
-      const budgetAmount = Number(budget.amount) || 0;
-
-      // 3. If totalExpenses > budgetAmount, create or update Alert
-      if (budgetAmount > 0 && totalExpenses > budgetAmount) {
-        const exceededAmount = totalExpenses - budgetAmount;
-        const exceededPercent = Math.round((totalExpenses / budgetAmount) * 100);
-        const severity: 'warning' | 'critical' = totalExpenses >= budgetAmount * 1.2 ? 'critical' : 'warning';
-
-        // 4. Find nearest milestone within 7 days in the same academic term
-        const txTime = new Date(transactionDate).getTime();
-        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-        const milestones = await this.milestoneRepo.find({
-          where: {
-            user: { id: userId },
-            academicTerm: { id: budget.academicTerm?.id || academicTermId },
-          },
-          order: { dueDate: 'ASC' },
-        });
-
-        const nearestMilestone = milestones.find((m) => {
-          const dueTime = new Date(m.dueDate).getTime();
-          return dueTime >= txTime - (24 * 60 * 60 * 1000) && dueTime <= txTime + sevenDaysMs;
-        }) || null;
-
-        const periodLabel = budget.periodType === 'weekly' ? 'tuần' : budget.periodType === 'monthly' ? 'tháng' : 'học kỳ';
-
-        // Check if an unread alert for this budget already exists to update
-        let alert = await this.alertRepo.findOne({
-          where: {
-            user: { id: userId },
-            budget: { id: budget.id },
-            status: In(['unread', 'new']),
-          },
-        });
-
-        if (!alert) {
-          alert = this.alertRepo.create({
-            user: { id: userId } as any,
-            academicTerm: { id: budget.academicTerm?.id || academicTermId } as any,
-            budget,
-            milestone: nearestMilestone,
-            type: 'budget_warning',
-            title: `Cảnh báo vượt ngân sách ${periodLabel}`,
-            message: `Ngân sách ${periodLabel} (ID: ${budget.id}) danh mục "${budget.category.name}" đã chi ${totalExpenses.toLocaleString('vi-VN')} / ${budgetAmount.toLocaleString('vi-VN')} VNĐ, vượt ${exceededAmount.toLocaleString('vi-VN')} VNĐ (${exceededPercent}%).`,
-            severity,
-            status: 'unread',
-            triggeredAt: new Date(),
-          });
-        } else {
-          alert.message = `Ngân sách ${periodLabel} (ID: ${budget.id}) danh mục "${budget.category.name}" đã chi ${totalExpenses.toLocaleString('vi-VN')} / ${budgetAmount.toLocaleString('vi-VN')} VNĐ, vượt ${exceededAmount.toLocaleString('vi-VN')} VNĐ (${exceededPercent}%).`;
-          alert.severity = severity;
-          alert.triggeredAt = new Date();
-          if (nearestMilestone) alert.milestone = nearestMilestone;
-        }
-
-        const savedAlert = await this.alertRepo.save(alert);
-        generatedAlerts.push(savedAlert);
+        .andWhere('tx.occurred_at BETWEEN :start AND :end', { start: budget.startDate, end: budget.endDate })
+        .getRawOne();
+      // Stored monetary values have two decimal places; compare integer cents.
+      const spent = Math.round(Number(result.total) * 100);
+      const limit = Math.round(Number(budget.amount) * 100);
+      let alert = await alerts.findOne({
+        where: { user: { id: userId }, budget: { id: budget.id }, type: 'budget_warning', status: In(['unread', 'new']) },
+      });
+      if (spent <= limit) {
+        // Corrected/moved/deleted expenses must not leave a stale unread warning.
+        if (alert) { alert.status = 'dismissed'; await alerts.save(alert); }
+        continue;
       }
+      const milestone = await manager.getRepository(Milestone).createQueryBuilder('m')
+        .where('m.user_id = :userId', { userId })
+        .andWhere('m.academic_term_id = :termId', { termId: budget.academicTerm.id })
+        .andWhere('m.is_completed = false')
+        .andWhere("m.due_date BETWEEN CAST(:today AS date) AND CAST(:today AS date) + 7", { today })
+        .orderBy('m.due_date', 'ASC').addOrderBy('m.id', 'ASC').getOne();
+      const excess = (spent - limit) / 100;
+      const percent = limit > 0 ? Math.round((spent - limit) / limit * 10000) / 100 : null;
+      const period = { weekly: 'tuần', monthly: 'tháng', academic_term: 'học kỳ' }[budget.periodType];
+      if (!alert) alert = alerts.create({ user: { id: userId }, budget, academicTerm: budget.academicTerm });
+      Object.assign(alert, {
+        type: 'budget_warning', status: 'unread', milestone,
+        title: `Cảnh báo vượt ngân sách ${period}`,
+        message: `Ngân sách ${period} (budget_id: ${budget.id}, period_type: ${budget.periodType}) danh mục "${budget.category.name}" đã chi ${(spent / 100).toLocaleString('vi-VN')} / ${(limit / 100).toLocaleString('vi-VN')} ${budget.currency}, vượt ${excess.toLocaleString('vi-VN')} ${budget.currency}${percent === null ? '' : ` (${percent}%)`}.`,
+        severity: spent >= limit * 1.2 ? 'critical' : 'warning',
+        triggeredAt: new Date(),
+      });
+      await alerts.save(alert);
     }
-
-    return generatedAlerts;
   }
 }

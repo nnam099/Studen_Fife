@@ -8,6 +8,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
 
+import { User } from '../users/entities/user.entity';
 import { AlertsService } from '../alerts/alerts.service';
 
 @Injectable()
@@ -20,6 +21,35 @@ export class TransactionsService {
     private readonly alertsService: AlertsService,
   ) {}
 
+  // Serialize mutations per user and commit expense + alerts together. A failed
+  // alert calculation rolls back the expense; concurrent requests cannot duplicate warnings.
+  private mutate<T>(userId: string, action: (service: TransactionsService) => Promise<T>) {
+    return this.repository.manager.transaction(async manager => {
+      await manager.getRepository(User).findOneOrFail({
+        where: { id: userId }, lock: { mode: 'pessimistic_write' },
+      });
+      const service = new TransactionsService(
+        manager.getRepository(Transaction), manager.getRepository(AcademicTerm),
+        manager.getRepository(Category), manager.getRepository(Milestone), this.alertsService,
+      );
+      const result = await action(service);
+      await this.alertsService.checkBudgetAlerts(userId, manager);
+      return result;
+    });
+  }
+
+  create(userId: string, dto: CreateTransactionDto) {
+    return this.mutate(userId, service => service.createInternal(userId, dto));
+  }
+
+  update(userId: string, id: string, dto: UpdateTransactionDto) {
+    return this.mutate(userId, service => service.updateInternal(userId, id, dto));
+  }
+
+  remove(userId: string, id: string) {
+    return this.mutate(userId, service => service.removeInternal(userId, id));
+  }
+
   findAll(userId: string) {
     return this.repository.find({ where: { user: { id: userId } }, relations: ['category', 'academicTerm', 'milestone'], order: { occurredAt: 'DESC' } });
   }
@@ -30,7 +60,7 @@ export class TransactionsService {
     return transaction;
   }
 
-  async create(userId: string, dto: CreateTransactionDto) {
+  private async createInternal(userId: string, dto: CreateTransactionDto) {
     const [term, category, milestone] = await Promise.all([
       this.terms.findOne({ where: { id: dto.academicTermId, user: { id: userId } } }),
       this.categories.findOne({ where: { id: dto.categoryId, user: { id: userId } } }),
@@ -50,13 +80,10 @@ export class TransactionsService {
       milestone,
     }));
 
-    if (savedTx.type === 'expense') {
-      await this.alertsService.checkBudgetAlerts(userId, term.id, category.id, savedTx.occurredAt);
-    }
     return savedTx;
   }
 
-  async update(userId: string, id: string, dto: UpdateTransactionDto) {
+  private async updateInternal(userId: string, id: string, dto: UpdateTransactionDto) {
     const transaction = await this.findOne(userId, id);
     if (dto.academicTermId) {
       const term = await this.terms.findOne({ where: { id: dto.academicTermId, user: { id: userId } } });
@@ -82,13 +109,10 @@ export class TransactionsService {
     delete (transaction as any).milestoneId;
     const updatedTx = await this.repository.save(transaction);
 
-    if (updatedTx.type === 'expense' && updatedTx.academicTerm && updatedTx.category) {
-      await this.alertsService.checkBudgetAlerts(userId, updatedTx.academicTerm.id, updatedTx.category.id, updatedTx.occurredAt);
-    }
     return updatedTx;
   }
 
-  async remove(userId: string, id: string) {
+  private async removeInternal(userId: string, id: string) {
     const transaction = await this.findOne(userId, id);
     await this.repository.remove(transaction);
     return { deleted: true, id };

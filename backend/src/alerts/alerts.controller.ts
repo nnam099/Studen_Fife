@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedUser, CurrentUser } from '../common/current-user.decorator';
 import { AlertsService } from './alerts.service';
@@ -19,7 +19,7 @@ export class AlertsController {
   @Patch(':id/read')
   markAsRead(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.alertsService.markAsRead(user.sub, id);
   }
@@ -27,7 +27,7 @@ export class AlertsController {
   @Patch(':id/dismiss')
   markAsDismissed(
     @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.alertsService.markAsDismissed(user.sub, id);
   }
