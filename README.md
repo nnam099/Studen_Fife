@@ -68,3 +68,19 @@ Xem file: [`docs/app_flow_diagram.svg`](docs/app_flow_diagram.svg)
 | 3 | Hồ Mạnh Danh |
 | 4 | Trần Minh Quang |
 | 5 | Trần Quốc Tuấn |
+
+## Backend local trên Android debug
+
+Bản `debug` cho phép HTTP qua manifest riêng (`app/src/debug/AndroidManifest.xml`).
+Bản release không bật ngoại lệ này; khi triển khai cần URL HTTPS.
+
+- Emulator: `http://10.0.2.2:3000/api/v1/` (mặc định).
+- Điện thoại thật qua USB: bật USB debugging, chạy
+  `adb reverse tcp:3000 tcp:3000`, rồi build/cài bằng
+  `./gradlew assembleDebug -PbackendBaseUrl=http://127.0.0.1:3000/api/v1/`.
+  Nếu backend trên máy chạy cổng khác, thay cổng thứ hai của `adb reverse`.
+- Điện thoại qua Wi-Fi: build với `-PbackendBaseUrl=http://<IP-LAN-may-tinh>:3000/api/v1/`;
+  điện thoại và máy tính phải kết nối được nhau, backend phải đang chạy.
+
+Cấu hình URL được đóng vào APK khi build; cần cài lại APK sau khi đổi URL.
+Chuyển tiếp USB có thể cần thiết lập lại sau khi ngắt kết nối/khởi động lại thiết bị.
