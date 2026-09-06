@@ -68,4 +68,12 @@ assert.equal((await request('GET','/alerts?status=unread')).length,2);
 const before = (await request('GET','/transactions')).length;
 await tx(1,{categoryId:'00000000-0000-4000-8000-000000000000'}).then(()=>assert.fail('expected 404'), e=>assert.match(e.message,/404/));
 assert.equal((await request('GET','/transactions')).length,before);
-console.log('PASS: below/equal limit, income, weekly + academic_term, monthly below limit, date windows, term/category isolation, milestone +7, status, ownership, edits, concurrent writes.');
+// All three period types can warn together; no eligible milestone means null.
+await request('PATCH',`/milestones/${near.id}`,{isCompleted:true});
+const big = await tx(800000);
+alerts = await request('GET','/alerts?status=unread');
+assert.deepEqual(alerts.map(a=>a.budget.periodType).sort(),['academic_term','monthly','weekly']);
+assert.ok(alerts.every(a=>a.milestone === null));
+await request('DELETE',`/transactions/${big.id}`);
+assert.equal((await request('GET','/alerts?status=unread')).length,2);
+console.log('PASS: below/equal limit, income, weekly + academic_term, monthly below limit, date windows, term/category isolation, milestone +7, status, ownership, edits, concurrent writes, all three periods, no milestone, delete.');
