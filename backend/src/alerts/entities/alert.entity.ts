@@ -32,8 +32,8 @@ export class Alert {
   @Column({ type: 'timestamp', name: 'triggered_at', default: () => 'CURRENT_TIMESTAMP' })
   triggeredAt: Date;
 
-  @Column({ default: 'new' })
-  status: 'new' | 'read' | 'dismissed';
+  @Column({ default: 'unread' })
+  status: 'unread' | 'new' | 'read' | 'dismissed';
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

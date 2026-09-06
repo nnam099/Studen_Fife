@@ -19,6 +19,8 @@ import com.sosinhvien.app.data.network.compose.ReportResponse
 import com.sosinhvien.app.data.network.compose.TransactionResponse
 import com.sosinhvien.app.data.network.compose.UpdateBudgetRequest
 
+import com.sosinhvien.app.data.network.compose.AlertResponse
+
 class AuthRepository(
     private val tokenStore: TokenStore,
     private val api: AuthApi = AuthApiFactory.create(tokenStore),
@@ -56,6 +58,9 @@ class AuthRepository(
     suspend fun report(): ReportResponse = api.report()
     suspend fun milestones(): List<MilestoneResponse> = api.milestones()
     suspend fun createMilestone(request: CreateMilestoneRequest) = api.createMilestone(request)
+    suspend fun alerts(status: String? = null): List<AlertResponse> = api.alerts(status)
+    suspend fun markAlertRead(id: String): AlertResponse = api.markAlertRead(id)
+    suspend fun markAlertDismissed(id: String): AlertResponse = api.markAlertDismissed(id)
 
     private fun save(response: AuthResponse) {
         tokenStore.save(response.accessToken, response.refreshToken)

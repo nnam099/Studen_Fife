@@ -45,6 +45,7 @@ import { Subscription } from './subscriptions/entities/subscription.entity';
           Subscription,
         ],
         synchronize: false,
+        migrationsRun: true,
         migrations: ['dist/migrations/*.js'],
         logging: configService.get<string>('NODE_ENV') !== 'production',
       }),

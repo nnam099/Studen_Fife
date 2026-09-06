@@ -25,28 +25,28 @@ interface AuthApi {
     suspend fun academicTerms(): List<AcademicTermResponse>
 
     @POST("academic-terms")
-    suspend fun createAcademicTerm(request: CreateAcademicTermRequest): AcademicTermResponse
+    suspend fun createAcademicTerm(@Body request: CreateAcademicTermRequest): AcademicTermResponse
 
     @GET("categories")
     suspend fun categories(): List<CategoryResponse>
 
     @POST("categories")
-    suspend fun createCategory(request: CreateCategoryRequest): CategoryResponse
+    suspend fun createCategory(@Body request: CreateCategoryRequest): CategoryResponse
 
     @GET("budgets")
     suspend fun budgets(): List<BudgetResponse>
 
     @POST("budgets")
-    suspend fun createBudget(request: CreateBudgetRequest): BudgetResponse
+    suspend fun createBudget(@Body request: CreateBudgetRequest): BudgetResponse
 
     @PATCH("budgets/{id}")
-    suspend fun updateBudget(@Path("id") id: String, request: UpdateBudgetRequest): BudgetResponse
+    suspend fun updateBudget(@Path("id") id: String, @Body request: UpdateBudgetRequest): BudgetResponse
 
     @GET("transactions")
     suspend fun transactions(): List<TransactionResponse>
 
     @POST("transactions")
-    suspend fun createTransaction(request: CreateTransactionRequest): TransactionResponse
+    suspend fun createTransaction(@Body request: CreateTransactionRequest): TransactionResponse
 
     @GET("transactions/report")
     suspend fun report(): ReportResponse
@@ -55,7 +55,16 @@ interface AuthApi {
     suspend fun milestones(): List<MilestoneResponse>
 
     @POST("milestones")
-    suspend fun createMilestone(request: CreateMilestoneRequest): MilestoneResponse
+    suspend fun createMilestone(@Body request: CreateMilestoneRequest): MilestoneResponse
+
+    @GET("alerts")
+    suspend fun alerts(@retrofit2.http.Query("status") status: String? = null): List<AlertResponse>
+
+    @PATCH("alerts/{id}/read")
+    suspend fun markAlertRead(@Path("id") id: String): AlertResponse
+
+    @PATCH("alerts/{id}/dismiss")
+    suspend fun markAlertDismissed(@Path("id") id: String): AlertResponse
 }
 
 data class ReportResponse(
@@ -134,6 +143,17 @@ data class CreateMilestoneRequest(
     val academicTermId: String,
 )
 data class MilestoneResponse(val id: String, val title: String, val dueDate: String, val type: String, val isCompleted: Boolean, val priority: Int)
+data class AlertResponse(
+    val id: String,
+    val type: String,
+    val title: String,
+    val message: String,
+    val severity: String,
+    val status: String,
+    val triggeredAt: String,
+    val budget: BudgetResponse? = null,
+    val milestone: MilestoneResponse? = null,
+)
 
 object AuthApiFactory {
     fun create(tokenStore: TokenStore): AuthApi {
