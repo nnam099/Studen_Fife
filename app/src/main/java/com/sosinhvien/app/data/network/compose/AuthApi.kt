@@ -13,13 +13,13 @@ import com.sosinhvien.app.data.auth.TokenStore
 
 interface AuthApi {
     @POST("auth/register")
-    suspend fun register(request: RegisterRequest): AuthResponse
+    suspend fun register(@Body request: RegisterRequest): AuthResponse
 
     @POST("auth/login")
-    suspend fun login(request: LoginRequest): AuthResponse
+    suspend fun login(@Body request: LoginRequest): AuthResponse
 
     @POST("auth/refresh")
-    suspend fun refresh(request: RefreshRequest): AuthResponse
+    suspend fun refresh(@Body request: RefreshRequest): AuthResponse
 
     @GET("academic-terms")
     suspend fun academicTerms(): List<AcademicTermResponse>
