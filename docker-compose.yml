@@ -1,18 +1,19 @@
+# Local development only. See docs/environment-security.md for production.
 services:
   postgres:
     image: postgres:17-alpine
     container_name: student-finance-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: student_user
-      POSTGRES_PASSWORD: student_password
-      POSTGRES_DB: student_finance
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
     ports:
-      - "55432:5432"
+      - "127.0.0.1:${DB_PORT:-55432}:5432"
     volumes:
       - student_finance_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U student_user -d student_finance"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10

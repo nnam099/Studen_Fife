@@ -1,3 +1,6 @@
+// Legacy entry point: build NestJS first; reuse its validated JWT contract.
+const { loadJwtConfig } = require('../../dist/auth/auth.config');
+const jwtConfig = loadJwtConfig(process.env);
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -6,8 +9,8 @@ const db = require('../db');
 
 // Helper to sign JWT
 const generateToken = (email) => {
-  return jwt.sign({ email }, process.env.JWT_SECRET || 'secret', {
-    expiresIn: '30d',
+  return jwt.sign({ email }, jwtConfig.accessSecret, {
+    expiresIn: jwtConfig.accessTtl, algorithm: 'HS256',
   });
 };
 

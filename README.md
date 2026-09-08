@@ -69,6 +69,13 @@ Xem file: [`docs/app_flow_diagram.svg`](docs/app_flow_diagram.svg)
 | 4 | Trần Minh Quang |
 | 5 | Trần Quốc Tuấn |
 
+## Cấu hình môi trường backend và JWT
+
+Xem [hướng dẫn setup và checklist xoay credential](docs/environment-security.md).
+JWT yêu cầu hai secret ngẫu nhiên độc lập; backend dừng khởi động nếu thiếu cấu hình.
+Docker Compose chỉ khởi động PostgreSQL local, backend chạy bằng npm theo hướng dẫn.
+Không commit file môi trường hoặc in cấu hình đã expand vào log.
+
 ## Backend local trên Android debug
 
 Bản `debug` cho phép HTTP qua manifest riêng (`app/src/debug/AndroidManifest.xml`).
@@ -84,3 +91,9 @@ Bản release không bật ngoại lệ này; khi triển khai cần URL HTTPS.
 
 Cấu hình URL được đóng vào APK khi build; cần cài lại APK sau khi đổi URL.
 Chuyển tiếp USB có thể cần thiết lập lại sau khi ngắt kết nối/khởi động lại thiết bị.
+
+## Kiểm tra tự động (S1)
+
+Chạy `python3 scripts/ci.py backend` hoặc `python3 scripts/ci.py android` (JDK 17).
+Xem [hướng dẫn CI, toolchain và clean-room export](docs/ci.md).
+Các bước kiểm tra không sử dụng `.env` local hoặc database dự án.

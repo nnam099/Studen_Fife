@@ -1,3 +1,6 @@
+// Legacy entry point: build NestJS first; reuse its validated JWT contract.
+const { loadJwtConfig } = require('../../dist/auth/auth.config');
+const jwtConfig = loadJwtConfig(process.env);
 const jwt = require('jsonwebtoken');
 
 module.exports = function (req, res, next) {
@@ -17,7 +20,7 @@ module.exports = function (req, res, next) {
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const decoded = jwt.verify(token, jwtConfig.accessSecret, { algorithms: ['HS256'] });
     req.user = decoded; // Attach user payload containing { email }
     next();
   } catch (err) {
