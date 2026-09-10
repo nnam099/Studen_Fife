@@ -32,3 +32,7 @@ postgres_data/
 **/postgres_data/
 .env
 
+# Environment secrets at any directory depth; templates are safe to track.
+.env.*
+!.env.example
+!.env.*.example

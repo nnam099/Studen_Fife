@@ -1,3 +1,5 @@
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JWT_CONFIGURATION, JwtConfiguration } from './auth.config';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,15 +11,20 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Module({
   imports: [
+    ConfigModule,
     UsersModule,
     TypeOrmModule.forFeature([User]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret',
-      signOptions: { expiresIn: '15m' as const },
-    }),
+    JwtModule.register({}),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
-  exports: [AuthService, JwtModule, JwtAuthGuard],
+  providers: [
+    {
+      provide: JWT_CONFIGURATION,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService): JwtConfiguration => config.getOrThrow<JwtConfiguration>('validatedJwt'),
+    },
+    AuthService, JwtAuthGuard,
+  ],
+  exports: [AuthService, JwtModule, JwtAuthGuard, JWT_CONFIGURATION],
 })
 export class AuthModule {}

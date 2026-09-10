@@ -1,5 +1,7 @@
+import { JWT_CONFIGURATION, JwtConfiguration } from './auth.config';
 import {
   Injectable,
+  Inject,
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
@@ -17,6 +19,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    @Inject(JWT_CONFIGURATION) private readonly jwtConfig: JwtConfiguration,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -79,7 +82,8 @@ export class AuthService {
   async refresh(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+        secret: this.jwtConfig.refreshSecret,
+        algorithms: ['HS256'],
       });
 
       const user = await this.userRepository.findOne({
@@ -101,16 +105,18 @@ export class AuthService {
     const accessToken = this.jwtService.sign(
       { sub: userId, email },
       {
-        secret: process.env.JWT_SECRET || 'dev-secret',
-        expiresIn: '15m' as const,
+        secret: this.jwtConfig.accessSecret,
+        expiresIn: this.jwtConfig.accessTtl,
+        algorithm: 'HS256',
       },
     );
 
     const refreshToken = this.jwtService.sign(
       { sub: userId, email },
       {
-        secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
-        expiresIn: '7d' as const,
+        secret: this.jwtConfig.refreshSecret,
+        expiresIn: this.jwtConfig.refreshTtl,
+        algorithm: 'HS256',
       },
     );
 
